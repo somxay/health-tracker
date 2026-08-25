@@ -169,6 +169,27 @@ const T = {
     btDevice:"ອຸປະກອນ", btRetry:"ລອງໃໝ່",
     btTip:"ກົດ 'ເຊື່ອມຕໍ່' ຈາກນັ້ນເລືອກ Fitbit Air ຈາກລາຍຊື່",
     btSteps:"ກ້າວ (Fitbit)", btSync:"ດຶງຂໍ້ມູນ Fitbit",
+    syncTitle:"📲 Sync ຂໍ້ມູນຈາກ Fitbit App",
+    syncSub:"ເປີດ Fitbit app → ເຫັນຕົວເລກ → ໃສ່ຂ້າງລຸ່ມ",
+    syncBtn:"💾 ບັນທຶກ & ອັບເດດ Dashboard",
+    syncDone:"✅ ບັນທຶກສຳເລັດ! Dashboard ອັບເດດແລ້ວ",
+    syncLast:"Sync ລ່າສຸດ:",
+    syncNever:"ຍັງບໍ່ເຄີຍ sync",
+    syncSource:"ແຫຼ່ງ: Fitbit App (Manual)",
+    syncReset:"🔄 ຣີເຊັດເປັນຂໍ້ມູນ Demo",
+    syncGuide:"📱 ວິທີດຶງຂໍ້ມູນຈາກ Fitbit App",
+    syncStep1:"ເປີດ Fitbit app ໃນໂທລະສັບ",
+    syncStep2:"ກົດ Today tab (ໜ້າຫຼັກ)",
+    syncStep3:"ເຫັນ Steps, HR, Sleep, Calories",
+    syncStep4:"ໃສ່ຕົວເລກເຫຼົ່ານັ້ນຂ້າງລຸ່ມ",
+    syncStep5:"ກົດ 'ບັນທຶກ' — Dashboard ອັບເດດທັນທີ",
+    fSteps:"ກ້າວ", fHR:"ອັດຕາຫົວໃຈ (bpm)",
+    fSleep:"ນອນ (ຊົ່ວໂມງ)", fDeep:"ນອນເລິກ (ຊົ່ວໂມງ)",
+    fRem:"REM (ຊົ່ວໂມງ)", fCalories:"ແຄລໍລີທີ່ເຜົາ",
+    fWater:"ນ້ຳ (ລິດ)", fSpo2:"SpO₂ (%)",
+    fFloors:"ຊັ້ນໄດ", fHRV:"HRV (ms)",
+    fVo2:"VO₂ Max", fFat:"ໄຂມັນ (%)",
+    syncSection:"ຂໍ້ມູນ Fitbit Air",
     insightTitle1:"ໄລຍະ REM ຫຼຸດ", insightBody1:"REM 1.1h — ຕ່ຳ 18%. ປິດໜ້າຈໍ 45 ນາທີກ່ອນນອນ.",
     insightTitle2:"HRV ດີຂຶ້ນ", insightBody2:"HRV 36→42 ms. ການຟື້ນຕົວດີ.",
     insightTitle3:"VO₂ Max ດີ", insightBody3:"VO₂ 48 ml/kg/min — ລະດັບ Excellent.",
@@ -228,6 +249,48 @@ const T = {
     btDevice:"Device", btRetry:"Try Again",
     btTip:"Click Connect then pick Fitbit Air from the list",
     btSteps:"Steps (Fitbit)", btSync:"Sync Fitbit",
+    syncTitle:"📲 Sync ຂໍ້ມູນຈາກ Fitbit App",
+    syncSub:"ເປີດ Fitbit app → ເຫັນຕົວເລກ → ໃສ່ຂ້າງລຸ່ມ",
+    syncBtn:"💾 ບັນທຶກ & ອັບເດດ Dashboard",
+    syncDone:"✅ ບັນທຶກສຳເລັດ! Dashboard ອັບເດດແລ້ວ",
+    syncLast:"Sync ລ່າສຸດ:",
+    syncNever:"ຍັງບໍ່ເຄີຍ sync",
+    syncSource:"ແຫຼ່ງ: Fitbit App (Manual)",
+    syncReset:"🔄 ຣີເຊັດເປັນຂໍ້ມູນ Demo",
+    syncGuide:"📱 ວິທີດຶງຂໍ້ມູນຈາກ Fitbit App",
+    syncStep1:"ເປີດ Fitbit app ໃນໂທລະສັບ",
+    syncStep2:"ກົດ Today tab (ໜ້າຫຼັກ)",
+    syncStep3:"ເຫັນ Steps, HR, Sleep, Calories",
+    syncStep4:"ໃສ່ຕົວເລກເຫຼົ່ານັ້ນຂ້າງລຸ່ມ",
+    syncStep5:"ກົດ 'ບັນທຶກ' — Dashboard ອັບເດດທັນທີ",
+    fSteps:"ກ້າວ", fHR:"ອັດຕາຫົວໃຈ (bpm)",
+    fSleep:"ນອນ (ຊົ່ວໂມງ)", fDeep:"ນອນເລິກ (ຊົ່ວໂມງ)",
+    fRem:"REM (ຊົ່ວໂມງ)", fCalories:"ແຄລໍລີທີ່ເຜົາ",
+    fWater:"ນ້ຳ (ລິດ)", fSpo2:"SpO₂ (%)",
+    fFloors:"ຊັ້ນໄດ", fHRV:"HRV (ms)",
+    fVo2:"VO₂ Max", fFat:"ໄຂມັນ (%)",
+    syncSection:"ຂໍ້ມູນ Fitbit Air",
+    syncTitle:"📲 Sync Data from Fitbit App",
+    syncSub:"Open Fitbit app → see your numbers → enter below",
+    syncBtn:"💾 Save & Update Dashboard",
+    syncDone:"✅ Saved! Dashboard updated.",
+    syncLast:"Last synced:",
+    syncNever:"Never synced",
+    syncSource:"Source: Fitbit App (Manual)",
+    syncReset:"🔄 Reset to Demo Data",
+    syncGuide:"📱 How to get data from Fitbit App",
+    syncStep1:"Open Fitbit app on your phone",
+    syncStep2:"Go to Today tab (home screen)",
+    syncStep3:"Note Steps, HR, Sleep, Calories",
+    syncStep4:"Enter those numbers below",
+    syncStep5:"Tap Save — Dashboard updates instantly",
+    fSteps:"Steps", fHR:"Heart Rate (bpm)",
+    fSleep:"Sleep (hours)", fDeep:"Deep Sleep (hours)",
+    fRem:"REM Sleep (hours)", fCalories:"Active Calories",
+    fWater:"Water (liters)", fSpo2:"SpO₂ (%)",
+    fFloors:"Floors climbed", fHRV:"HRV (ms)",
+    fVo2:"VO₂ Max", fFat:"Body Fat (%)",
+    syncSection:"Fitbit Air Data",
     insightTitle1:"REM Sleep Dip", insightBody1:"REM avg 1.1h — 18% below norm.",
     insightTitle2:"HRV Trending Up", insightBody2:"HRV 36→42 ms. Recovery improving.",
     insightTitle3:"VO₂ Max Strong", insightBody3:"VO₂ 48 ml/kg/min — Excellent.",
@@ -236,12 +299,24 @@ const T = {
 };
 
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
-const TODAY = {
+// ── Load from localStorage (Fitbit manual sync) or use defaults ──────────────
+const DEFAULT_DATA = {
   steps:9247,stepsGoal:10000,heartRate:68,hrv:42,
   sleep:5.2,sleepGoal:8,deepSleep:0.8,remSleep:1.1,lightSleep:3.3,
   calories:1840,caloriesGoal:2200,water:1.8,waterGoal:2.5,
   spo2:98,spo2Goal:95,floors:12,floorsGoal:20,vo2max:48.2,bodyFat:18.4,
+  syncTime:null, syncSource:"mock",
 };
+function loadFitbitData() {
+  try {
+    const saved = localStorage.getItem('fitbit_sync');
+    return saved ? { ...DEFAULT_DATA, ...JSON.parse(saved) } : { ...DEFAULT_DATA };
+  } catch(e) { return { ...DEFAULT_DATA }; }
+}
+function saveFitbitData(data) {
+  try { localStorage.setItem('fitbit_sync', JSON.stringify(data)); } catch(e) {}
+}
+const TODAY = loadFitbitData();
 const isBadSleep = s => s.sleep < 6 || s.deepSleep < 1.0;
 
 const genW = (base,v) => ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(day=>({
@@ -387,6 +462,17 @@ function HealthApp(){
   const [mealLog,setMealLog]=useState([]);
   const [mealLoading,setMealLoading]=useState(false);
   const [imgPreview,setImgPreview]=useState(null);
+  // Fitbit Manual Sync state
+  const [syncData,setSyncData]=useState(()=>loadFitbitData());
+  const [syncDone,setSyncDone]=useState(false);
+  const [syncForm,setSyncForm]=useState({
+    steps:String(TODAY.steps), heartRate:String(TODAY.heartRate),
+    hrv:String(TODAY.hrv), sleep:String(TODAY.sleep),
+    deepSleep:String(TODAY.deepSleep), remSleep:String(TODAY.remSleep||1.1),
+    calories:String(TODAY.calories), water:String(TODAY.water),
+    spo2:String(TODAY.spo2), floors:String(TODAY.floors),
+    vo2max:String(TODAY.vo2max), bodyFat:String(TODAY.bodyFat),
+  });
   // Fitbit BLE state
   const [btState,setBtState]=useState("idle"); // idle|searching|connected|error|nobrowser|nohttps
   const [btDevice,setBtDevice]=useState(null);
@@ -432,6 +518,45 @@ function HealthApp(){
     }catch{setMealLog(p=>[{id:Date.now(),meal,analysis:lang==="lo"?"ວິເຄາະບໍ່ໄດ້":"Could not analyze.",time:"--:--"},...p]);}
     setMealLoading(false);
   },[mealInput,imgPreview,lang]);
+
+  const handleSyncSave = useCallback(() => {
+    const n = v => parseFloat(v)||0;
+    const updated = {
+      ...DEFAULT_DATA,
+      steps:    Math.round(n(syncForm.steps)),
+      heartRate:Math.round(n(syncForm.heartRate)),
+      hrv:      Math.round(n(syncForm.hrv)),
+      sleep:    n(syncForm.sleep),
+      deepSleep:n(syncForm.deepSleep),
+      remSleep: n(syncForm.remSleep),
+      lightSleep:Math.max(0, n(syncForm.sleep)-n(syncForm.deepSleep)-n(syncForm.remSleep)),
+      calories: Math.round(n(syncForm.calories)),
+      water:    n(syncForm.water),
+      spo2:     Math.round(n(syncForm.spo2)),
+      floors:   Math.round(n(syncForm.floors)),
+      vo2max:   n(syncForm.vo2max),
+      bodyFat:  n(syncForm.bodyFat),
+      syncTime: new Date().toLocaleString(),
+      syncSource: "Fitbit App (Manual)",
+    };
+    saveFitbitData(updated);
+    setSyncData(updated);
+    setSyncDone(true);
+    setTimeout(()=>setSyncDone(false), 3000);
+  }, [syncForm]);
+
+  const handleSyncReset = useCallback(() => {
+    localStorage.removeItem('fitbit_sync');
+    setSyncData({...DEFAULT_DATA});
+    setSyncForm({
+      steps:String(DEFAULT_DATA.steps), heartRate:String(DEFAULT_DATA.heartRate),
+      hrv:String(DEFAULT_DATA.hrv), sleep:String(DEFAULT_DATA.sleep),
+      deepSleep:String(DEFAULT_DATA.deepSleep), remSleep:String(DEFAULT_DATA.remSleep||1.1),
+      calories:String(DEFAULT_DATA.calories), water:String(DEFAULT_DATA.water),
+      spo2:String(DEFAULT_DATA.spo2), floors:String(DEFAULT_DATA.floors),
+      vo2max:String(DEFAULT_DATA.vo2max), bodyFat:String(DEFAULT_DATA.bodyFat),
+    });
+  }, []);
 
   const connectFitbit = useCallback(async () => {
     if (!navigator.bluetooth) { setBtState("nobrowser"); return; }
@@ -537,7 +662,7 @@ function HealthApp(){
 
     // NAV
     React.createElement('div',{className:"nav"},
-      [["dashboard",t.tabDashboard],["sport",t.tabSport],["meals",t.tabMeals],["goals",t.tabGoals],["fitbit","Fitbit 🫀"]].map(([id,lb])=>
+      [["dashboard",t.tabDashboard],["sport",t.tabSport],["meals",t.tabMeals],["goals",t.tabGoals],["fitbit","Fitbit 📲"]].map(([id,lb])=>
         React.createElement('button',{key:id,className:`nt ${tab===id?"act":""}`,onClick:()=>setTab(id)},lb))),
 
     // ── DASHBOARD ──
@@ -747,134 +872,97 @@ function HealthApp(){
         React.createElement(Download,{size:12}),t.exportPDF),
       React.createElement('div',{className:"disc",style:{marginTop:10}},React.createElement(AlertCircle,{size:12,style:{flexShrink:0,marginTop:1}}),React.createElement('span',null,t.healthDisclaimer))),
 
-    // ── FITBIT ──
+    // ── FITBIT MANUAL SYNC ──
     tab==="fitbit"&&React.createElement('div',null,
-      // Header card
-      React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:16,padding:20,marginBottom:12}},
-        React.createElement('div',{style:{display:"flex",alignItems:"center",gap:12,marginBottom:16}},
-          React.createElement('div',{style:{width:52,height:52,borderRadius:16,background:"linear-gradient(135deg,#00B0B9,#0073CF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}},"🫀"),
-          React.createElement('div',null,
-            React.createElement('div',{style:{fontSize:16,fontWeight:700,color:"white"}},t.fitbitTitle),
-            React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginTop:2}},"Google Fitbit Air"),
-            React.createElement('div',{style:{fontSize:11,color:"#6b7280"}},lang==="lo"?"Bluetooth Low Energy (BLE)":"Bluetooth Low Energy (BLE)"))),
 
-        // Status indicator
-        React.createElement('div',{style:{
-          display:"flex",alignItems:"center",gap:10,padding:"12px 14px",
-          borderRadius:12,marginBottom:16,
-          background: btState==="connected"?"#052e16":btState==="searching"?"#1a1505":btState==="error"||btState==="nobrowser"||btState==="nohttps"?"#3b0a0a":"#0f111a",
-          border: `1px solid ${btState==="connected"?"#16a34a":btState==="searching"?"#ca8a04":btState==="error"||btState==="nobrowser"||btState==="nohttps"?"#ef4444":"#1e2130"}`,
-        }},
-          // Animated dot
-          React.createElement('div',{style:{
-            width:10,height:10,borderRadius:"50%",flexShrink:0,
-            background: btState==="connected"?"#22c55e":btState==="searching"?"#eab308":"#ef4444",
-            animation: btState==="searching"?"pulse 1s infinite":"none",
-          }}),
+      // ── Fitbit Device Header ──
+      React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:16,padding:18,marginBottom:10}},
+        React.createElement('div',{style:{display:"flex",alignItems:"center",gap:14,marginBottom:14}},
+          React.createElement('div',{style:{width:56,height:56,borderRadius:16,background:"linear-gradient(135deg,#00B0B9,#0073CF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}},"🫀"),
           React.createElement('div',{style:{flex:1}},
-            React.createElement('div',{style:{fontSize:13,fontWeight:600,color:"white"}},
-              btState==="connected"?t.btConnected:
-              btState==="searching"?t.btSearching:
-              btState==="error"?t.btError:
-              btState==="nobrowser"?t.btNoBrowser:
-              btState==="nohttps"?t.btHttps:
-              t.btDisconnected),
-            btDeviceName&&btState==="connected"&&React.createElement('div',{style:{fontSize:10,color:"#6b7280",marginTop:2}},`📱 ${btDeviceName}`))),
+            React.createElement('div',{style:{fontSize:16,fontWeight:700,color:"white",marginBottom:2}},"Google Fitbit Air"),
+            React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginBottom:4}},"Fitbit Air · "+lang==="lo"?"ການ Sync ດ້ວຍຕົນເອງ":"Manual Sync"),
+            React.createElement('div',{style:{display:"flex",alignItems:"center",gap:6}},
+              React.createElement('div',{style:{width:7,height:7,borderRadius:"50%",background:syncData.syncTime?"#22c55e":"#4b5563"}}),
+              React.createElement('span',{style:{fontSize:10,color:syncData.syncTime?"#22c55e":"#4b5563"}},
+                syncData.syncTime ? (t.syncLast+" "+syncData.syncTime) : t.syncNever)))),
 
-        // Live metrics (when connected)
-        btState==="connected"&&React.createElement('div',{className:"g2",style:{marginBottom:16}},
-          React.createElement('div',{style:{background:"#0a0c15",borderRadius:12,padding:14,textAlign:"center"}},
-            React.createElement('div',{style:{fontSize:10,color:"#6b7280",marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}},t.btLiveHR),
-            React.createElement('div',{style:{fontSize:36,fontWeight:700,color:"#ef4444",lineHeight:1}},btLiveHR||"--"),
-            React.createElement('div',{style:{fontSize:10,color:"#4b5563",marginTop:2}},"bpm"),
-            btLiveHR&&React.createElement('div',{style:{fontSize:9,color:"#ef4444",marginTop:4,display:"flex",alignItems:"center",justifyContent:"center",gap:3}},
-              React.createElement('span',{style:{animation:"pulse .8s infinite"}},"♥")," Live")),
-          React.createElement('div',{style:{background:"#0a0c15",borderRadius:12,padding:14,textAlign:"center"}},
-            React.createElement('div',{style:{fontSize:10,color:"#6b7280",marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}},t.btBattery),
-            React.createElement('div',{style:{fontSize:36,fontWeight:700,color: btBattery===null?"#4b5563":btBattery>50?"#22c55e":btBattery>20?"#eab308":"#ef4444",lineHeight:1}},btBattery!==null?btBattery:"--"),
-            React.createElement('div',{style:{fontSize:10,color:"#4b5563",marginTop:2}},btBattery!==null?"%":"N/A"),
-            btBattery!==null&&React.createElement('div',{style:{marginTop:6,height:4,background:"#1e2130",borderRadius:2}},
-              React.createElement('div',{style:{height:"100%",width:`${btBattery}%`,background:btBattery>50?"#22c55e":btBattery>20?"#eab308":"#ef4444",borderRadius:2,transition:"width 1s ease"}})))),
+        // Last sync summary chips
+        syncData.syncTime&&React.createElement('div',{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}},
+          [[lang==="lo"?"ກ້າວ":"Steps", syncData.steps.toLocaleString(), "#10b981"],
+           [lang==="lo"?"HR":"HR", syncData.heartRate+" bpm", "#ef4444"],
+           [lang==="lo"?"ນອນ":"Sleep", syncData.sleep+"h", "#8b5cf6"],
+           ["SpO₂", syncData.spo2+"%", "#34d399"],
+          ].map(([l,v,c])=>React.createElement('div',{key:l,style:{background:`${c}15`,border:`1px solid ${c}40`,borderRadius:8,padding:"4px 10px",display:"flex",gap:5,alignItems:"center"}},
+            React.createElement('span',{style:{fontSize:10,color:"#6b7280"}}),
+            React.createElement('span',{style:{fontSize:11,color:c,fontWeight:600}},l+": "+v)))),
 
-        // Action button
-        React.createElement('button',{
-          onClick: btState==="connected"?disconnectFitbit:connectFitbit,
-          disabled: btState==="searching",
-          style:{
-            width:"100%",padding:"12px 0",borderRadius:12,border:"none",cursor:btState==="searching"?"not-allowed":"pointer",
-            background: btState==="connected"?"#3b0a0a":btState==="searching"?"#1a1d2e":"linear-gradient(135deg,#00B0B9,#0073CF)",
-            color: btState==="searching"?"#4b5563":"white",
-            fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:"inherit",
-            transition:"all .2s",
-          }},
-          btState==="searching"
-            ?React.createElement('span',{style:{animation:"spin 1s linear infinite",display:"inline-block"}},"⟳")
-            :React.createElement(btState==="connected"?BluetoothOff:Bluetooth,{size:16,color:"white"}),
-          btState==="connected"?t.btDisconnect:btState==="searching"?t.btSearching:t.btConnect),
+        // Source badge
+        React.createElement('div',{style:{fontSize:10,color:"#4b5563",textAlign:"right"}},t.syncSource)),
 
-        // Tip
-        (btState==="idle"||btState==="error")&&React.createElement('div',{style:{marginTop:10,fontSize:10,color:"#4b5563",textAlign:"center",lineHeight:1.6}},
-          "💡 ",t.btTip)),
+      // ── Guide card ──
+      React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1e2130",borderRadius:14,padding:16,marginBottom:10}},
+        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"white",marginBottom:10}},t.syncGuide),
+        [t.syncStep1,t.syncStep2,t.syncStep3,t.syncStep4,t.syncStep5].map((s,i)=>
+          React.createElement('div',{key:i,style:{display:"flex",gap:10,alignItems:"flex-start",marginBottom:7}},
+            React.createElement('div',{style:{width:20,height:20,borderRadius:"50%",background:"#6366f1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"white",flexShrink:0}},i+1),
+            React.createElement('div',{style:{fontSize:11,color:"#9ca3af",lineHeight:1.6}},s)))),
 
-      // How it works card
+      // ── Input Form ──
       React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:14,padding:16,marginBottom:10}},
-        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"white",marginBottom:12}},lang==="lo"?"🔵 ວິທີໃຊ້":"🔵 How it works"),
-        [
-          [lang==="lo"?"1. ໃສ່ Fitbit Air ທີ່ຂໍ້ມືທ່ານ":"1. Wear your Fitbit Air","#6366f1"],
-          [lang==="lo"?"2. ເປີດ Bluetooth ໃນໂທລະສັບ":"2. Enable Bluetooth on your phone","#8b5cf6"],
-          [lang==="lo"?"3. ກົດ 'ເຊື່ອມຕໍ່ Fitbit Air' ຂ້າງເທິງ":"3. Tap 'Connect Fitbit Air' above","#a78bfa"],
-          [lang==="lo"?"4. ເລືອກ Fitbit Air ຈາກລາຍຊື່ popup":"4. Select Fitbit Air from the popup list","#c4b5fd"],
-          [lang==="lo"?"5. ຄ້ອຍ HR ຈະຍ້າຍ live ທັນທີ":"5. Live heart rate streams instantly","#ddd6fe"],
-        ].map(([step,color],i)=>
-          React.createElement('div',{key:i,style:{display:"flex",gap:10,alignItems:"flex-start",marginBottom:8}},
-            React.createElement('div',{style:{width:6,height:6,borderRadius:"50%",background:color,flexShrink:0,marginTop:4}}),
-            React.createElement('div',{style:{fontSize:11,color:"#9ca3af",lineHeight:1.5}},step)))),
+        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"white",marginBottom:14}},t.syncTitle),
+        React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginBottom:14}},t.syncSub),
 
-      // Requirements card
-      React.createElement('div',{style:{background:"#1a1205",border:"1px solid #78350f",borderRadius:12,padding:14}},
-        React.createElement('div',{style:{fontSize:11,fontWeight:700,color:"#d97706",marginBottom:8}},"⚠️ "+( lang==="lo"?"ຂໍ້ກຳນົດ":"Requirements")),
-        [
-          lang==="lo"?"✅ Browser: Chrome ຫຼື Edge (Safari ບໍ່ຮອງຮັບ)":"✅ Browser: Chrome or Edge (Safari not supported)",
-          lang==="lo"?"✅ HTTPS: ໃຊ້ somxay.github.io ເທົ່ານັ້ນ":"✅ HTTPS: Must use somxay.github.io",
-          lang==="lo"?"✅ Bluetooth: ເປີດໃນໂທລະສັບ":"✅ Bluetooth: Enabled on phone",
-          lang==="lo"?"✅ Fitbit Air: ຊາດແບດ + ໃກ້ <10m":"✅ Fitbit Air: Charged + within 10m",
-          lang==="lo"?"⚠️ Android: ຕ້ອງໃຫ້ສິດ Location":"⚠️ Android: Location permission required",
-        ].map((req,i)=>
-          React.createElement('div',{key:i,style:{fontSize:11,color:"#d97706",lineHeight:1.7}},req)))),
+        // 2-column grid of inputs
+        React.createElement('div',{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}},
+          [
+            ["steps",      t.fSteps,    "9,247",  "👣"],
+            ["heartRate",  t.fHR,       "68",     "❤️"],
+            ["sleep",      t.fSleep,    "7.5",    "😴"],
+            ["deepSleep",  t.fDeep,     "1.4",    "🌊"],
+            ["remSleep",   t.fRem,      "1.8",    "💭"],
+            ["calories",   t.fCalories, "1840",   "🔥"],
+            ["water",      t.fWater,    "2.0",    "💧"],
+            ["spo2",       t.fSpo2,     "98",     "🩸"],
+            ["floors",     t.fFloors,   "12",     "🏢"],
+            ["hrv",        t.fHRV,      "42",     "📊"],
+            ["vo2max",     t.fVo2,      "48.2",   "🫁"],
+            ["bodyFat",    t.fFat,      "18.4",   "⚖️"],
+          ].map(([key,label,ph,emoji])=>
+            React.createElement('div',{key},
+              React.createElement('div',{style:{fontSize:10,color:"#6b7280",marginBottom:4,display:"flex",alignItems:"center",gap:4}},
+                React.createElement('span',null,emoji),label),
+              React.createElement('input',{
+                type:"number", step:"0.1",
+                placeholder:ph,
+                value:syncForm[key],
+                onChange:e=>setSyncForm(p=>({...p,[key]:e.target.value})),
+                style:{
+                  width:"100%",background:"#131520",border:`1px solid ${syncForm[key]?"#3d3f55":"#252838"}`,
+                  borderRadius:9,padding:"8px 10px",color:"white",fontSize:13,
+                  outline:"none",fontFamily:"inherit",
+                }
+              })))),
 
-        // FAB
-    React.createElement('button',{className:"fab",onClick:()=>setChatOpen(true),title:t.openCoach},"🐱"),
+        // Save button
+        React.createElement('button',{
+          onClick:handleSyncSave,
+          style:{
+            width:"100%",padding:13,borderRadius:12,border:"none",
+            background:syncDone?"#052e16":"linear-gradient(135deg,#00B0B9,#0073CF)",
+            color:"white",fontSize:13,fontWeight:700,cursor:"pointer",
+            fontFamily:"inherit",transition:"all .3s",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+          }},
+          syncDone?t.syncDone:t.syncBtn),
 
-    // CHAT DRAWER
-    chatOpen&&React.createElement('div',null,
-      React.createElement('div',{className:"cbk",onClick:()=>setChatOpen(false)}),
-      React.createElement('div',{className:"cdw"},
-        React.createElement('div',{className:"chdr"},
-          React.createElement('div',{style:{display:"flex",alignItems:"center",gap:8}},
-            React.createElement('div',{style:{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#ef4444)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}},"🐱"),
-            React.createElement('div',null,
-              React.createElement('div',{style:{fontSize:12,fontWeight:700}},t.meowCoach),
-              React.createElement('div',{style:{fontSize:9,color:"#10b981",display:"flex",alignItems:"center",gap:3}},
-                React.createElement('div',{style:{width:5,height:5,borderRadius:"50%",background:"#10b981"}}),t.online,
-                bad&&React.createElement('span',{style:{color:"#ef4444",marginLeft:3}},"⚠️")))),
-          React.createElement('button',{onClick:()=>setChatOpen(false),style:{background:"none",border:"none",cursor:"pointer",color:"#4b5563"}},React.createElement(X,{size:18}))),
-        React.createElement('div',{className:"cms"},
-          msgs.map((m,i)=>React.createElement('div',{key:i,className:`mb ${m.role}`},m.content)),
-          loading&&React.createElement('div',{className:"mb assistant",style:{display:"flex",gap:4,alignItems:"center"}},
-            [0,.2,.4].map((d,i)=>React.createElement('div',{key:i,style:{width:5,height:5,borderRadius:"50%",background:"#f59e0b",animation:`pulse 1s infinite ${d}s`}}))),
-          React.createElement('div',{ref:chatEnd})),
-        React.createElement('div',{style:{padding:"5px 11px 6px",borderTop:"1px solid #1a1d2e"}},
-          React.createElement('div',{style:{display:"flex",gap:4,flexWrap:"wrap"}},
-            [t.qq1,t.qq2,t.qq3].map(q=>React.createElement('button',{key:q,onClick:()=>setInput(q),style:{padding:"3px 7px",borderRadius:16,border:"1px solid #1a1d2e",background:"transparent",color:"#6b7280",fontSize:9,cursor:"pointer",fontFamily:"inherit"}},q)))),
-        React.createElement('div',{className:"cir"},
-          React.createElement('textarea',{className:"ci",rows:1,placeholder:t.askMeow,value:input,onChange:e=>setInput(e.target.value),
-            onKeyDown:e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}),
-          React.createElement('button',{className:"sb",onClick:send,disabled:loading||!input.trim()},
-            loading?React.createElement(Loader2,{size:14,color:"white"}):React.createElement(Send,{size:14,color:"white"}))),
-        React.createElement('div',{style:{padding:"3px 13px 9px",fontSize:9,color:"#374151",textAlign:"center"}},t.meowDisclaimer)))
-  );
-}
+        // Reset button
+        React.createElement('button',{
+          onClick:handleSyncReset,
+          style:{
+            width:"100%",marginTop:8,padding:10,borderRadius:10,
+            border:"1px solid #1e2130",background:"transparent",
+            color:"#4b5563",fontSize:11,cursor:"pointer",fontFamily:"inherit",
+          }},t.syncReset)),
 
-// Mount
-const root=ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(HealthApp));
+    
