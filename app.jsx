@@ -388,7 +388,7 @@ function HealthApp(){
           ].map(([l,v])=>
             React.createElement('div',{key:l,style:{background:"#131520",borderRadius:10,padding:10}},
               React.createElement('div',{style:{fontSize:9,color:"#4b5563",marginBottom:4}},l),
-              React.createElement('div',{style:{fontSize:11,fontWeight:600,color:"white"}},v))))))),
+              React.createElement('div',{style:{fontSize:11,fontWeight:600,color:"white"}},v)))),
 
     React.createElement('button',{className:"fab",onClick:()=>setChatOpen(true),title:t.openCoach},"🐱"),
 
