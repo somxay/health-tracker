@@ -37,6 +37,11 @@ const PATHS = {
   Dumbbell:      "M6 5v14M18 5v14M6 8H2M6 16H2M22 8h-4M22 16h-4M8 8h8v8H8z",
   Bike:          "M5 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM19 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5 18H3l2-6 3-2 4 2h3l3 4M14 10h2l2 4",
   PersonStanding:"M12 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM8 21l4-4 4 4M12 7v6M9 12l-1 9M15 12l1 9",
+  Bluetooth:     "M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11",
+  BluetoothOff:  "M13 5.07V1l-7 7 3.13 3.13M5.5 13.5 2 17l5 5v-4.07M20 4l-4 4M4 20l16-16",
+  Watch:         "M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M9 2h6M9 22h6M12 9v3l2 2",
+  Wifi:          "M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
+  RefreshCw:     "M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16",
   WifiOff:       "M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
   Layers:        "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
   Percent:       "M19 5L5 19M6.5 6.5h.01M17.5 17.5h.01",
@@ -56,12 +61,69 @@ const CheckCircle2=mkIcon('CheckCircle2'), Globe=mkIcon('Globe');
 const Dumbbell=mkIcon('Dumbbell'), Bike=mkIcon('Bike'), PersonStanding=mkIcon('PersonStanding');
 const WifiOff=mkIcon('WifiOff'), Layers=mkIcon('Layers'), Percent=mkIcon('Percent');
 const VO2Icon=mkIcon('Wind');
+const Bluetooth=mkIcon('Bluetooth'), BluetoothOff=mkIcon('BluetoothOff');
+const Watch=mkIcon('Watch'), Wifi=mkIcon('Wifi'), RefreshCw=mkIcon('RefreshCw');
+
 
 // Spinner (animated)
 const Loader2 = ({ size=16, color="currentColor", style={} }) =>
   Icon({ d: PATHS.Loader2, size, color,
     style:{ ...style, animation:"spin 1s linear infinite", transformOrigin:"center" } });
 
+
+// ─── FITBIT AIR BLUETOOTH ─────────────────────────────────────────────────────
+// Fitbit uses BLE — Web Bluetooth API (Chrome/Edge เท่านั้น, ต้อง HTTPS)
+// Fitbit Air Service UUID (non-standard — ใช้ Generic Access + Heart Rate)
+const FITBIT_BT_SERVICES = {
+  heartRate:   '0000180d-0000-1000-8000-00805f9b34fb',
+  battery:     '0000180f-0000-1000-8000-00805f9b34fb',
+  deviceInfo:  '0000180a-0000-1000-8000-00805f9b34fb',
+};
+
+async function scanFitbitAir() {
+  if (!navigator.bluetooth) {
+    throw new Error('NO_BT'); // Browser ບໍ່ຮອງຮັບ
+  }
+  const device = await navigator.bluetooth.requestDevice({
+    filters: [
+      { namePrefix: 'Fitbit' },
+      { namePrefix: 'FB' },
+    ],
+    optionalServices: Object.values(FITBIT_BT_SERVICES),
+  });
+  return device;
+}
+
+async function connectFitbitAir(device, onHR, onDisconnect) {
+  const server = await device.gatt.connect();
+  device.addEventListener('gattserverdisconnected', onDisconnect);
+
+  // Heart Rate
+  try {
+    const hrService = await server.getPrimaryService(FITBIT_BT_SERVICES.heartRate);
+    const hrChar    = await hrService.getCharacteristic('00002a37-0000-1000-8000-00805f9b34fb');
+    await hrChar.startNotifications();
+    hrChar.addEventListener('characteristicvaluechanged', e => {
+      const val = e.target.value;
+      const flags = val.getUint8(0);
+      const hr = (flags & 0x1) ? val.getUint16(1, true) : val.getUint8(1);
+      onHR(hr);
+    });
+  } catch(e) { console.warn('HR service unavailable', e); }
+
+  // Battery
+  let battery = null;
+  try {
+    const batService = await server.getPrimaryService(FITBIT_BT_SERVICES.battery);
+    const batChar    = await batService.getCharacteristic('00002a19-0000-1000-8000-00805f9b34fb');
+    const batVal     = await batChar.readValue();
+    battery = batVal.getUint8(0);
+  } catch(e) { console.warn('Battery service unavailable', e); }
+
+  return { server, battery };
+}
+
+// ─── END FITBIT ───────────────────────────────────────────────────────────────
 // ─── I18N ─────────────────────────────────────────────────────────────────────
 const T = {
   lo: {
@@ -96,6 +158,17 @@ const T = {
     meowDisclaimer:"ໂຄ໊ດແມວໃຫ້ຄຳແນະນຳດ້ານສຸຂະຄາບ ບໍ່ແມ່ນທາງການແພດ.",
     qq1:"VO₂ Max ຂ້ອຍດີບໍ?", qq2:"ໄຂມັນຫຼາຍ ຄວນເຮັດຫຍັງ?", qq3:"ນອນໜ້ອຍ ເຮັດໄດ້ແນວໃດ?",
     openCoach:"ເປີດ Meow Coach", wellness:"ສຸຂະພາບ",
+    fitbitTitle:"Fitbit Air", fitbitSub:"ສະຖານະ Bluetooth",
+    btConnect:"ເຊື່ອມຕໍ່ Fitbit Air", btDisconnect:"ຕັດການເຊື່ອມຕໍ່",
+    btConnected:"ເຊື່ອມຕໍ່ແລ້ວ ✅", btDisconnected:"ຍັງບໍ່ໄດ້ເຊື່ອມ",
+    btSearching:"ກຳລັງຊອກຫາ Fitbit Air…",
+    btError:"ບໍ່ພົບ Fitbit Air. ກວດສອບ Bluetooth ໃນໂທລະສັບ.",
+    btNoBrowser:"Browser ບໍ່ຮອງຮັບ. ໃຊ້ Chrome ຫຼື Edge.",
+    btHttps:"ຕ້ອງ HTTPS (somxay.github.io) ເທົ່ານັ້ນ.",
+    btBattery:"ແບດ Fitbit", btLiveHR:"HR ສົດ",
+    btDevice:"ອຸປະກອນ", btRetry:"ລອງໃໝ່",
+    btTip:"ກົດ 'ເຊື່ອມຕໍ່' ຈາກນັ້ນເລືອກ Fitbit Air ຈາກລາຍຊື່",
+    btSteps:"ກ້າວ (Fitbit)", btSync:"ດຶງຂໍ້ມູນ Fitbit",
     insightTitle1:"ໄລຍະ REM ຫຼຸດ", insightBody1:"REM 1.1h — ຕ່ຳ 18%. ປິດໜ້າຈໍ 45 ນາທີກ່ອນນອນ.",
     insightTitle2:"HRV ດີຂຶ້ນ", insightBody2:"HRV 36→42 ms. ການຟື້ນຕົວດີ.",
     insightTitle3:"VO₂ Max ດີ", insightBody3:"VO₂ 48 ml/kg/min — ລະດັບ Excellent.",
@@ -133,6 +206,28 @@ const T = {
     meowDisclaimer:"Meow Coach provides wellness tips only. Not medical advice.",
     qq1:"Is my VO₂ Max good?", qq2:"Help with body fat?", qq3:"Help me sleep better",
     openCoach:"Open Meow Coach", wellness:"WELLNESS",
+    fitbitTitle:"Fitbit Air", fitbitSub:"ສະຖານະ Bluetooth",
+    btConnect:"ເຊື່ອມຕໍ່ Fitbit Air", btDisconnect:"ຕັດການເຊື່ອມຕໍ່",
+    btConnected:"ເຊື່ອມຕໍ່ແລ້ວ ✅", btDisconnected:"ຍັງບໍ່ໄດ້ເຊື່ອມ",
+    btSearching:"ກຳລັງຊອກຫາ Fitbit Air…",
+    btError:"ບໍ່ພົບ Fitbit Air. ກວດສອບ Bluetooth ໃນໂທລະສັບ.",
+    btNoBrowser:"Browser ບໍ່ຮອງຮັບ. ໃຊ້ Chrome ຫຼື Edge.",
+    btHttps:"ຕ້ອງ HTTPS (somxay.github.io) ເທົ່ານັ້ນ.",
+    btBattery:"ແບດ Fitbit", btLiveHR:"HR ສົດ",
+    btDevice:"ອຸປະກອນ", btRetry:"ລອງໃໝ່",
+    btTip:"ກົດ 'ເຊື່ອມຕໍ່' ຈາກນັ້ນເລືອກ Fitbit Air ຈາກລາຍຊື່",
+    btSteps:"ກ້າວ (Fitbit)", btSync:"ດຶງຂໍ້ມູນ Fitbit",
+    fitbitTitle:"Fitbit Air", fitbitSub:"Bluetooth Status",
+    btConnect:"Connect Fitbit Air", btDisconnect:"Disconnect",
+    btConnected:"Connected ✅", btDisconnected:"Not connected",
+    btSearching:"Scanning for Fitbit Air…",
+    btError:"Fitbit Air not found. Check phone Bluetooth.",
+    btNoBrowser:"Browser not supported. Use Chrome or Edge.",
+    btHttps:"HTTPS required (somxay.github.io) only.",
+    btBattery:"Fitbit Battery", btLiveHR:"Live HR",
+    btDevice:"Device", btRetry:"Try Again",
+    btTip:"Click Connect then pick Fitbit Air from the list",
+    btSteps:"Steps (Fitbit)", btSync:"Sync Fitbit",
     insightTitle1:"REM Sleep Dip", insightBody1:"REM avg 1.1h — 18% below norm.",
     insightTitle2:"HRV Trending Up", insightBody2:"HRV 36→42 ms. Recovery improving.",
     insightTitle3:"VO₂ Max Strong", insightBody3:"VO₂ 48 ml/kg/min — Excellent.",
@@ -292,6 +387,13 @@ function HealthApp(){
   const [mealLog,setMealLog]=useState([]);
   const [mealLoading,setMealLoading]=useState(false);
   const [imgPreview,setImgPreview]=useState(null);
+  // Fitbit BLE state
+  const [btState,setBtState]=useState("idle"); // idle|searching|connected|error|nobrowser|nohttps
+  const [btDevice,setBtDevice]=useState(null);
+  const [btServer,setBtServer]=useState(null);
+  const [btBattery,setBtBattery]=useState(null);
+  const [btLiveHR,setBtLiveHR]=useState(null);
+  const [btDeviceName,setBtDeviceName]=useState(null);
   const fileRef=useRef(null);
   const chatEnd=useRef(null);
 
@@ -330,6 +432,35 @@ function HealthApp(){
     }catch{setMealLog(p=>[{id:Date.now(),meal,analysis:lang==="lo"?"ວິເຄາະບໍ່ໄດ້":"Could not analyze.",time:"--:--"},...p]);}
     setMealLoading(false);
   },[mealInput,imgPreview,lang]);
+
+  const connectFitbit = useCallback(async () => {
+    if (!navigator.bluetooth) { setBtState("nobrowser"); return; }
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      setBtState("nohttps"); return;
+    }
+    setBtState("searching"); setBtLiveHR(null); setBtBattery(null);
+    try {
+      const device = await scanFitbitAir();
+      setBtDeviceName(device.name || "Fitbit Air");
+      const { server, battery } = await connectFitbitAir(
+        device,
+        hr => setBtLiveHR(hr),
+        () => { setBtState("idle"); setBtDevice(null); setBtServer(null); setBtLiveHR(null); }
+      );
+      setBtDevice(device); setBtServer(server);
+      setBtBattery(battery); setBtState("connected");
+    } catch(e) {
+      console.error(e);
+      if (e.name === "NotFoundError") setBtState("idle"); // user cancelled
+      else setBtState("error");
+    }
+  }, []);
+
+  const disconnectFitbit = useCallback(() => {
+    if (btServer?.connected) btServer.disconnect();
+    setBtState("idle"); setBtDevice(null); setBtServer(null);
+    setBtLiveHR(null); setBtBattery(null); setBtDeviceName(null);
+  }, [btServer]);
 
   const css=`
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -406,7 +537,7 @@ function HealthApp(){
 
     // NAV
     React.createElement('div',{className:"nav"},
-      [["dashboard",t.tabDashboard],["sport",t.tabSport],["meals",t.tabMeals],["goals",t.tabGoals]].map(([id,lb])=>
+      [["dashboard",t.tabDashboard],["sport",t.tabSport],["meals",t.tabMeals],["goals",t.tabGoals],["fitbit","Fitbit 🫀"]].map(([id,lb])=>
         React.createElement('button',{key:id,className:`nt ${tab===id?"act":""}`,onClick:()=>setTab(id)},lb))),
 
     // ── DASHBOARD ──
@@ -616,7 +747,102 @@ function HealthApp(){
         React.createElement(Download,{size:12}),t.exportPDF),
       React.createElement('div',{className:"disc",style:{marginTop:10}},React.createElement(AlertCircle,{size:12,style:{flexShrink:0,marginTop:1}}),React.createElement('span',null,t.healthDisclaimer))),
 
-    // FAB
+    // ── FITBIT ──
+    tab==="fitbit"&&React.createElement('div',null,
+      // Header card
+      React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:16,padding:20,marginBottom:12}},
+        React.createElement('div',{style:{display:"flex",alignItems:"center",gap:12,marginBottom:16}},
+          React.createElement('div',{style:{width:52,height:52,borderRadius:16,background:"linear-gradient(135deg,#00B0B9,#0073CF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}},"🫀"),
+          React.createElement('div',null,
+            React.createElement('div',{style:{fontSize:16,fontWeight:700,color:"white"}},t.fitbitTitle),
+            React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginTop:2}},"Google Fitbit Air"),
+            React.createElement('div',{style:{fontSize:11,color:"#6b7280"}},lang==="lo"?"Bluetooth Low Energy (BLE)":"Bluetooth Low Energy (BLE)"))),
+
+        // Status indicator
+        React.createElement('div',{style:{
+          display:"flex",alignItems:"center",gap:10,padding:"12px 14px",
+          borderRadius:12,marginBottom:16,
+          background: btState==="connected"?"#052e16":btState==="searching"?"#1a1505":btState==="error"||btState==="nobrowser"||btState==="nohttps"?"#3b0a0a":"#0f111a",
+          border: `1px solid ${btState==="connected"?"#16a34a":btState==="searching"?"#ca8a04":btState==="error"||btState==="nobrowser"||btState==="nohttps"?"#ef4444":"#1e2130"}`,
+        }},
+          // Animated dot
+          React.createElement('div',{style:{
+            width:10,height:10,borderRadius:"50%",flexShrink:0,
+            background: btState==="connected"?"#22c55e":btState==="searching"?"#eab308":"#ef4444",
+            animation: btState==="searching"?"pulse 1s infinite":"none",
+          }}),
+          React.createElement('div',{style:{flex:1}},
+            React.createElement('div',{style:{fontSize:13,fontWeight:600,color:"white"}},
+              btState==="connected"?t.btConnected:
+              btState==="searching"?t.btSearching:
+              btState==="error"?t.btError:
+              btState==="nobrowser"?t.btNoBrowser:
+              btState==="nohttps"?t.btHttps:
+              t.btDisconnected),
+            btDeviceName&&btState==="connected"&&React.createElement('div',{style:{fontSize:10,color:"#6b7280",marginTop:2}},`📱 ${btDeviceName}`))),
+
+        // Live metrics (when connected)
+        btState==="connected"&&React.createElement('div',{className:"g2",style:{marginBottom:16}},
+          React.createElement('div',{style:{background:"#0a0c15",borderRadius:12,padding:14,textAlign:"center"}},
+            React.createElement('div',{style:{fontSize:10,color:"#6b7280",marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}},t.btLiveHR),
+            React.createElement('div',{style:{fontSize:36,fontWeight:700,color:"#ef4444",lineHeight:1}},btLiveHR||"--"),
+            React.createElement('div',{style:{fontSize:10,color:"#4b5563",marginTop:2}},"bpm"),
+            btLiveHR&&React.createElement('div',{style:{fontSize:9,color:"#ef4444",marginTop:4,display:"flex",alignItems:"center",justifyContent:"center",gap:3}},
+              React.createElement('span',{style:{animation:"pulse .8s infinite"}},"♥")," Live")),
+          React.createElement('div',{style:{background:"#0a0c15",borderRadius:12,padding:14,textAlign:"center"}},
+            React.createElement('div',{style:{fontSize:10,color:"#6b7280",marginBottom:4,textTransform:"uppercase",letterSpacing:".06em"}},t.btBattery),
+            React.createElement('div',{style:{fontSize:36,fontWeight:700,color: btBattery===null?"#4b5563":btBattery>50?"#22c55e":btBattery>20?"#eab308":"#ef4444",lineHeight:1}},btBattery!==null?btBattery:"--"),
+            React.createElement('div',{style:{fontSize:10,color:"#4b5563",marginTop:2}},btBattery!==null?"%":"N/A"),
+            btBattery!==null&&React.createElement('div',{style:{marginTop:6,height:4,background:"#1e2130",borderRadius:2}},
+              React.createElement('div',{style:{height:"100%",width:`${btBattery}%`,background:btBattery>50?"#22c55e":btBattery>20?"#eab308":"#ef4444",borderRadius:2,transition:"width 1s ease"}})))),
+
+        // Action button
+        React.createElement('button',{
+          onClick: btState==="connected"?disconnectFitbit:connectFitbit,
+          disabled: btState==="searching",
+          style:{
+            width:"100%",padding:"12px 0",borderRadius:12,border:"none",cursor:btState==="searching"?"not-allowed":"pointer",
+            background: btState==="connected"?"#3b0a0a":btState==="searching"?"#1a1d2e":"linear-gradient(135deg,#00B0B9,#0073CF)",
+            color: btState==="searching"?"#4b5563":"white",
+            fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:"inherit",
+            transition:"all .2s",
+          }},
+          btState==="searching"
+            ?React.createElement('span',{style:{animation:"spin 1s linear infinite",display:"inline-block"}},"⟳")
+            :React.createElement(btState==="connected"?BluetoothOff:Bluetooth,{size:16,color:"white"}),
+          btState==="connected"?t.btDisconnect:btState==="searching"?t.btSearching:t.btConnect),
+
+        // Tip
+        (btState==="idle"||btState==="error")&&React.createElement('div',{style:{marginTop:10,fontSize:10,color:"#4b5563",textAlign:"center",lineHeight:1.6}},
+          "💡 ",t.btTip)),
+
+      // How it works card
+      React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:14,padding:16,marginBottom:10}},
+        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"white",marginBottom:12}},lang==="lo"?"🔵 ວິທີໃຊ້":"🔵 How it works"),
+        [
+          [lang==="lo"?"1. ໃສ່ Fitbit Air ທີ່ຂໍ້ມືທ່ານ":"1. Wear your Fitbit Air","#6366f1"],
+          [lang==="lo"?"2. ເປີດ Bluetooth ໃນໂທລະສັບ":"2. Enable Bluetooth on your phone","#8b5cf6"],
+          [lang==="lo"?"3. ກົດ 'ເຊື່ອມຕໍ່ Fitbit Air' ຂ້າງເທິງ":"3. Tap 'Connect Fitbit Air' above","#a78bfa"],
+          [lang==="lo"?"4. ເລືອກ Fitbit Air ຈາກລາຍຊື່ popup":"4. Select Fitbit Air from the popup list","#c4b5fd"],
+          [lang==="lo"?"5. ຄ້ອຍ HR ຈະຍ້າຍ live ທັນທີ":"5. Live heart rate streams instantly","#ddd6fe"],
+        ].map(([step,color],i)=>
+          React.createElement('div',{key:i,style:{display:"flex",gap:10,alignItems:"flex-start",marginBottom:8}},
+            React.createElement('div',{style:{width:6,height:6,borderRadius:"50%",background:color,flexShrink:0,marginTop:4}}),
+            React.createElement('div',{style:{fontSize:11,color:"#9ca3af",lineHeight:1.5}},step)))),
+
+      // Requirements card
+      React.createElement('div',{style:{background:"#1a1205",border:"1px solid #78350f",borderRadius:12,padding:14}},
+        React.createElement('div',{style:{fontSize:11,fontWeight:700,color:"#d97706",marginBottom:8}},"⚠️ "+( lang==="lo"?"ຂໍ້ກຳນົດ":"Requirements")),
+        [
+          lang==="lo"?"✅ Browser: Chrome ຫຼື Edge (Safari ບໍ່ຮອງຮັບ)":"✅ Browser: Chrome or Edge (Safari not supported)",
+          lang==="lo"?"✅ HTTPS: ໃຊ້ somxay.github.io ເທົ່ານັ້ນ":"✅ HTTPS: Must use somxay.github.io",
+          lang==="lo"?"✅ Bluetooth: ເປີດໃນໂທລະສັບ":"✅ Bluetooth: Enabled on phone",
+          lang==="lo"?"✅ Fitbit Air: ຊາດແບດ + ໃກ້ <10m":"✅ Fitbit Air: Charged + within 10m",
+          lang==="lo"?"⚠️ Android: ຕ້ອງໃຫ້ສິດ Location":"⚠️ Android: Location permission required",
+        ].map((req,i)=>
+          React.createElement('div',{key:i,style:{fontSize:11,color:"#d97706",lineHeight:1.7}},req)))),
+
+        // FAB
     React.createElement('button',{className:"fab",onClick:()=>setChatOpen(true),title:t.openCoach},"🐱"),
 
     // CHAT DRAWER
