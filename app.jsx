@@ -290,7 +290,12 @@ function HealthApp(){
   const chatEnd=useRef(null);
 
   useEffect(()=>{
-    const w=lang==="lo"?`ເມ້ຍ ${bad?`ເຈົ້ານອນ ${TODAY.sleep}h?! 😹`:` ສຸຂະພາບ ${SCORE}/100 ດີ! 😸`}:`Meow ${bad?` Only ${TODAY.sleep}h?! 😹`:`Wellness ${SCORE}/100 nice! 😸`}`;
+    let w;
+    if(lang==="lo"){
+      w = "ເມ້ຍ " + (bad ? `ເຈົ້ານອນ ${TODAY.sleep}h?! 😹` : ` ສຸຂະພາບ ${SCORE}/100 ດີ! 😸`);
+    } else {
+      w = "Meow " + (bad ? ` Only ${TODAY.sleep}h?! 😹` : ` Wellness ${SCORE}/100 nice! 😸`);
+    }
     setMsgs([{role:"assistant",content:w}]);
   },[lang]);
 
