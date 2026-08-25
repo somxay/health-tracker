@@ -337,15 +337,7 @@ function HealthApp(){
   const fileRef=useRef(null);
   const chatEnd=useRef(null);
 
-  // Fitbit Manual Sync
-  const [syncData,setSyncData]=useState(()=>loadFitbitData());
-  const [syncForm,setSyncForm]=useState({
-    steps:String(TODAY.steps), heartRate:String(TODAY.heartRate), hrv:String(TODAY.hrv),
-    sleep:String(TODAY.sleep), deepSleep:String(TODAY.deepSleep), remSleep:String(TODAY.remSleep||1.1),
-    calories:String(TODAY.calories), water:String(TODAY.water), spo2:String(TODAY.spo2),
-    floors:String(TODAY.floors), vo2max:String(TODAY.vo2max), bodyFat:String(TODAY.bodyFat),
-  });
-  const [syncMsg,setSyncMsg]=useState(false);
+
 
   useEffect(()=>{
     const w=lang==="lo"
@@ -383,42 +375,7 @@ function HealthApp(){
     setMealLoading(false);
   },[mealInput,imgPreview,lang]);
 
-  const handleSyncSave=useCallback(()=>{
-    const n = v => parseFloat(v)||0;
-    const updated = {
-      ...DEFAULT_DATA,
-      steps:    Math.round(n(syncForm.steps)),
-      heartRate:Math.round(n(syncForm.heartRate)),
-      hrv:      Math.round(n(syncForm.hrv)),
-      sleep:    n(syncForm.sleep),
-      deepSleep:n(syncForm.deepSleep),
-      remSleep: n(syncForm.remSleep),
-      lightSleep:Math.max(0, n(syncForm.sleep)-n(syncForm.deepSleep)-n(syncForm.remSleep)),
-      calories: Math.round(n(syncForm.calories)),
-      water:    n(syncForm.water),
-      spo2:     Math.round(n(syncForm.spo2)),
-      floors:   Math.round(n(syncForm.floors)),
-      vo2max:   n(syncForm.vo2max),
-      bodyFat:  n(syncForm.bodyFat),
-      syncTime: new Date().toLocaleString(),
-      syncSource: "Fitbit App (Manual)",
-    };
-    saveFitbitData(updated);
-    setSyncData(updated);
-    setSyncMsg(true);
-    setTimeout(()=>setSyncMsg(false), 3000);
-  }, [syncForm]);
 
-  const handleSyncReset=useCallback(()=>{
-    localStorage.removeItem('fitbit_sync');
-    setSyncData({...DEFAULT_DATA});
-    setSyncForm({
-      steps:String(DEFAULT_DATA.steps), heartRate:String(DEFAULT_DATA.heartRate), hrv:String(DEFAULT_DATA.hrv),
-      sleep:String(DEFAULT_DATA.sleep), deepSleep:String(DEFAULT_DATA.deepSleep), remSleep:String(DEFAULT_DATA.remSleep||1.1),
-      calories:String(DEFAULT_DATA.calories), water:String(DEFAULT_DATA.water), spo2:String(DEFAULT_DATA.spo2),
-      floors:String(DEFAULT_DATA.floors), vo2max:String(DEFAULT_DATA.vo2max), bodyFat:String(DEFAULT_DATA.bodyFat),
-    });
-  }, []);
 
   const css=`
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -670,68 +627,82 @@ function HealthApp(){
       React.createElement('button',{style:{width:"100%",padding:11,border:"1px dashed #1e2130",borderRadius:10,background:"transparent",color:"#4b5563",cursor:"pointer",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",gap:6,fontFamily:"inherit"}},React.createElement(Download,{size:12}),t.exportPDF),
       React.createElement('div',{className:"disc",style:{marginTop:10}},React.createElement(AlertCircle,{size:12,style:{flexShrink:0,marginTop:1}}),React.createElement('span',null,t.healthDisclaimer))),
 
-    // ── FITBIT MANUAL SYNC ──
+    // ── FITBIT AIR BLE STATUS ──
     tab==="fitbit"&&React.createElement('div',null,
-      React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:16,padding:18,marginBottom:10}},
-        React.createElement('div',{style:{display:"flex",alignItems:"center",gap:14,marginBottom:14}},
-          React.createElement('div',{style:{width:56,height:56,borderRadius:16,background:"linear-gradient(135deg,#00B0B9,#0073CF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}},"🫀"),
+      React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:16,padding:20,marginBottom:12}},
+        React.createElement('div',{style:{display:"flex",alignItems:"center",gap:12,marginBottom:16}},
+          React.createElement('div',{style:{width:52,height:52,borderRadius:16,background:"linear-gradient(135deg,#00B0B9,#0073CF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}},"🫀"),
+          React.createElement('div',null,
+            React.createElement('div',{style:{fontSize:16,fontWeight:700,color:"white"}},t.fitbitTitle),
+            React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginTop:2}},"Google Fitbit Air"),
+            React.createElement('div',{style:{fontSize:11,color:"#6b7280"}},lang==="lo"?"Bluetooth Low Energy (BLE)":"Bluetooth Low Energy"))),
+
+        React.createElement('div',{style:{
+          display:"flex",alignItems:"center",gap:10,padding:"14px 16px",
+          borderRadius:12,marginBottom:16,
+          background: btState==="connected"?"#052e16":btState==="searching"?"#1a1505":btState==="error"||btState==="nobrowser"||btState==="nohttps"?"#3b0a0a":"#0f111a",
+          border: `1px solid ${btState==="connected"?"#16a34a":btState==="searching"?"#ca8a04":btState==="error"||btState==="nobrowser"||btState==="nohttps"?"#ef4444":"#1e2130"}`,
+        }},
+          React.createElement('div',{style:{
+            width:12,height:12,borderRadius:"50%",flexShrink:0,
+            background: btState==="connected"?"#22c55e":btState==="searching"?"#eab308":"#ef4444",
+            animation: btState==="searching"?"pulse 1s infinite":"none",
+          }}),
           React.createElement('div',{style:{flex:1}},
-            React.createElement('div',{style:{fontSize:16,fontWeight:700,color:"white",marginBottom:2}},"Google Fitbit Air"),
-            React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginBottom:4}},lang==="lo"?"ການ Sync ດ້ວຍຕົນເອງ":"Manual Sync"),
-            React.createElement('div',{style:{display:"flex",alignItems:"center",gap:6}},
-              React.createElement('div',{style:{width:7,height:7,borderRadius:"50%",background:syncData.syncTime?"#22c55e":"#4b5563"}}),
-              React.createElement('span',{style:{fontSize:10,color:syncData.syncTime?"#22c55e":"#4b5563"}},
-                syncData.syncTime ? (t.syncLast+" "+syncData.syncTime) : t.syncNever)))),
+            React.createElement('div',{style:{fontSize:14,fontWeight:600,color:"white"}},
+              btState==="connected"?t.btConnected:
+              btState==="searching"?t.btSearching:
+              btState==="error"?t.btError:
+              btState==="nobrowser"?t.btNoBrowser:
+              btState==="nohttps"?t.btHttps:
+              t.btDisconnected),
+            btDeviceName&&btState==="connected"&&React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginTop:3}},`📱 ${btDeviceName}`),
+            btBattery!==null&&btState==="connected"&&React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginTop:3}},`🔋 ${btBattery}%`)),
+          React.createElement('span',{style:{fontSize:24}},btState==="connected"?"✅":btState==="searching"?"⟳":"❌"))),
 
-        syncData.syncTime&&React.createElement('div',{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}},
-          [["Steps", syncData.steps.toLocaleString(), "#10b981"],
-           ["HR", syncData.heartRate+" bpm", "#ef4444"],
-           ["Sleep", syncData.sleep+"h", "#8b5cf6"],
-           ["SpO₂", syncData.spo2+"%", "#34d399"],
-          ].map(([l,v,c])=>React.createElement('div',{key:l,style:{background:`${c}15`,border:`1px solid ${c}40`,borderRadius:8,padding:"4px 10px",display:"flex",gap:5,alignItems:"center"}},
-            React.createElement('span',{style:{fontSize:11,color:c,fontWeight:600}},l+": "+v)))),
+        React.createElement('button',{
+          onClick: btState==="connected"?disconnectFitbit:connectFitbit,
+          disabled: btState==="searching",
+          style:{
+            width:"100%",padding:"12px 0",borderRadius:12,border:"none",cursor:btState==="searching"?"not-allowed":"pointer",
+            background: btState==="connected"?"#3b0a0a":btState==="searching"?"#1a1d2e":"linear-gradient(135deg,#00B0B9,#0073CF)",
+            color: btState==="searching"?"#4b5563":"white",
+            fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontFamily:"inherit",
+            transition:"all .2s",
+          }},
+          btState==="searching"?React.createElement('span',{style:{animation:"spin 1s linear infinite",display:"inline-block"}},"⟳"):null,
+          btState==="connected"?t.btDisconnect:btState==="searching"?t.btSearching:t.btConnect)),
 
-        React.createElement('div',{style:{fontSize:10,color:"#4b5563",textAlign:"right"}},t.syncSource)),
+      React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1e2130",borderRadius:14,padding:16}},
+        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"white",marginBottom:12}},lang==="lo"?"💡 ກ່ຽວກັບ Fitbit Air BLE":"💡 About Fitbit Air BLE"),
+        React.createElement('div',{style:{fontSize:11,color:"#9ca3af",lineHeight:1.8}},
+          lang==="lo"
+            ?"Fitbit Air ໃຊ້ Bluetooth Low Energy (BLE) ເພື່ອເຊື່ອມຕໍ່ໂທລະສັບ. ປຸ່ມ 'ເຊື່ອມຕໍ່' ໃຊ້ Web Bluetooth API ເພື່ອກວດຈັບໃກ້ຄຽງ Fitbit Air.
 
-      React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1e2130",borderRadius:14,padding:16,marginBottom:10}},
-        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"white",marginBottom:10}},t.syncGuide),
-        [t.syncStep1,t.syncStep2,t.syncStep3,t.syncStep4,t.syncStep5].map((s,i)=>
-          React.createElement('div',{key:i,style:{display:"flex",gap:10,alignItems:"flex-start",marginBottom:7}},
-            React.createElement('div',{style:{width:20,height:20,borderRadius:"50%",background:"#6366f1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"white",flexShrink:0}},i+1),
-            React.createElement('div',{style:{fontSize:11,color:"#9ca3af",lineHeight:1.6}},s)))),
+✅ ເຊື່ອມຕໍ່ໄດ້: ເຫັນ Fitbit Air ຢູ່ໃນລາຍຊື່ BLE devices
+❌ ຂໍ້ມູນ HR: Fitbit ເຮັດໃຫ້ຂໍ້ມູນ Heart Rate ຊ່ອນ (protocol ສ່ວນຕົວ)
 
-      React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:14,padding:16,marginBottom:10}},
-        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"white",marginBottom:12}},t.syncTitle),
-        React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginBottom:14}},t.syncSub),
-        React.createElement('div',{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}},
-          [["steps",      t.fSteps,    "9247"],
-           ["heartRate",  t.fHR,       "68"],
-           ["sleep",      t.fSleep,    "7.5"],
-           ["deepSleep",  t.fDeep,     "1.4"],
-           ["remSleep",   t.fRem,      "1.8"],
-           ["calories",   t.fCalories, "1840"],
-           ["water",      t.fWater,    "2.0"],
-           ["spo2",       t.fSpo2,     "98"],
-           ["floors",     t.fFloors,   "12"],
-           ["hrv",        t.fHRV,      "42"],
-           ["vo2max",     t.fVo2,      "48.2"],
-           ["bodyFat",    t.fFat,      "18.4"],
-          ].map(([key,label,ph])=>
-            React.createElement('div',{key},
-              React.createElement('div',{style:{fontSize:10,color:"#6b7280",marginBottom:4}},label),
-              React.createElement('input',{
-                type:"number", step:"0.1", placeholder:ph,
-                value:syncForm[key],
-                onChange:e=>setSyncForm(p=>({...p,[key]:e.target.value})),
-                style:{width:"100%",background:"#131520",border:"1px solid #252838",borderRadius:9,padding:"8px 10px",color:"white",fontSize:13,outline:"none",fontFamily:"inherit"}
-              })))),
+ວິທີ Sync ຂໍ້ມູນ: ໃຊ້ app 'Fitbit' ພື່ອ sync → Dashboard ຂະນະນັ້ນ"
+            :"Fitbit Air uses Bluetooth Low Energy (BLE) to connect to your phone. The 'Connect' button uses Web Bluetooth API to scan nearby devices.
 
-        React.createElement('button',{onClick:handleSyncSave,
-          style:{width:"100%",padding:13,borderRadius:12,border:"none",background:syncMsg?"#052e16":"linear-gradient(135deg,#00B0B9,#0073CF)",color:"white",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .3s",display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
-          syncMsg?t.syncDone:t.syncBtn),
+✅ Can connect: See Fitbit Air in BLE device list
+❌ Heart Rate data: Fitbit encrypts HR data (proprietary protocol)
 
-        React.createElement('button',{onClick:handleSyncReset,
-          style:{width:"100%",marginTop:8,padding:10,borderRadius:10,border:"1px solid #1e2130",background:"transparent",color:"#4b5563",fontSize:11,cursor:"pointer",fontFamily:"inherit"}},t.syncReset))),
+How to sync: Use Fitbit app to sync → then check dashboard")),
+
+      React.createElement('div',{style:{background:"#0a0c15",border:"1px solid #1a1d2e",borderRadius:12,padding:14,marginTop:10}},
+        React.createElement('div',{style:{fontSize:10,color:"#6b7280",fontWeight:600,marginBottom:8,textTransform:"uppercase",letterSpacing:".06em"}},lang==="lo"?"⚙️ ສະຖານະ BLE":"⚙️ BLE Status"),
+        React.createElement('div',{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+          [
+            [lang==="lo"?"ສະຖານະ":"State", btState==="connected"?"Connected ✅":btState==="searching"?"Scanning 🔍":"Disconnected ❌"],
+            [lang==="lo"?"ອຸປະກອນ":"Device", btDeviceName||"None"],
+            [lang==="lo"?"ແບດ":"Battery", btBattery!==null?btBattery+"%":"N/A"],
+            [lang==="lo"?"Browser":"Browser", navigator.bluetooth?"Chrome/Edge ✅":"Unsupported ❌"],
+          ].map(([l,v])=>
+            React.createElement('div',{key:l,style:{background:"#131520",borderRadius:10,padding:10}},
+              React.createElement('div',{style:{fontSize:9,color:"#4b5563",marginBottom:4}},l),
+              React.createElement('div',{style:{fontSize:11,fontWeight:600,color:"white"}},v))))),
+    ),
 
     // FAB
     React.createElement('button',{className:"fab",onClick:()=>setChatOpen(true),title:t.openCoach},"🐱"),
