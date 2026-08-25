@@ -7,78 +7,93 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, #root { min-height: 100vh; background: #080a12; }
+    html, body { min-height: 100vh; background: #080a12; }
     body { font-family: 'Noto Sans Lao', -apple-system, sans-serif; }
-    #loading { display:flex; align-items:center; justify-content:center; height:100vh; color:#6b7280; font-size:14px; gap:10px; }
+    #loading {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100vh; color: #6b7280; font-size: 14px; gap: 12px;
+    }
+    .spin { display: inline-block; animation: spin 1s linear infinite; font-size: 28px; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .spin { display:inline-block; animation: spin 1s linear infinite; }
+    #root { min-height: 100vh; }
   </style>
 </head>
 <body>
 
-<div id="loading"><span class="spin">🐱</span> ກຳລັງໂຫຼດ...</div>
-<div id="root"></div>
-
-<!-- 1. React -->
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-<!-- 2. Recharts -->
-<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-
-<!-- 3. Lucide — ໃຊ້ version ທີ່ expose window.lucide -->
-<script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.js"></script>
-
-<!-- 4. ສ້າງ lucideReact object ຈາກ lucide ທີ່ໂຫຼດແລ້ວ -->
-<script>
-  // lucide UMD ຈະ expose ເປັນ window.lucide
-  // ສ້າງ wrapper ໃຫ້ app.jsx ຫາໄດ້ໃນຊື່ lucideReact
-  window.lucideReact = {};
-
-  // icon names ທີ່ app.jsx ໃຊ້
-  const iconNames = [
-    'Activity','Heart','Moon','Flame','Droplets','Wind','Brain',
-    'TrendingUp','TrendingDown','ChevronRight','Send','Download',
-    'Camera','Target','Zap','X','MessageSquare','AlertCircle',
-    'CheckCircle2','Loader2','Globe','Dumbbell','Bike',
-    'PersonStanding','WifiOff','Layers','Percent'
-  ];
-
-  // lucide UMD ສ້าງ SVG icons — wrap ໃຫ້ເປັນ React component
-  iconNames.forEach(name => {
-    window.lucideReact[name] = function({ size=16, color='currentColor', style={}, ...props }) {
-      const el = lucide.createElement(lucide[name] || lucide.Activity, {});
-      return React.createElement('svg', {
-        xmlns: 'http://www.w3.org/2000/svg',
-        width: size, height: size,
-        viewBox: '0 0 24 24',
-        fill: 'none',
-        stroke: color,
-        strokeWidth: 2,
-        strokeLinecap: 'round',
-        strokeLinejoin: 'round',
-        style,
-        ...props,
-        dangerouslySetInnerHTML: { __html: el ? el.innerHTML : '' }
-      });
-    };
-    window.lucideReact[name].displayName = name;
-  });
-</script>
-
-<!-- 5. Babel -->
-<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
-
-<!-- 6. App -->
-<script type="text/babel" src="app.jsx"></script>
+<div id="loading">
+  <span class="spin">🐱</span>
+  <span>ກຳລັງໂຫຼດ...</span>
+</div>
+<div id="root" style="display:none"></div>
 
 <script>
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      const l = document.getElementById('loading');
-      if (l) l.style.display = 'none';
-    }, 1000);
+// ── Step 1: Load scripts in order, then mount app ──────────────────────────
+const SCRIPTS = [
+  // React 18 (must be first)
+  "https://unpkg.com/react@18.3.1/umd/react.production.min.js",
+  // ReactDOM 18
+  "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js",
+  // prop-types (Recharts depends on this)
+  "https://unpkg.com/prop-types@15.8.1/prop-types.min.js",
+  // Recharts 2.x (needs React + prop-types loaded first)
+  "https://unpkg.com/recharts@2.12.7/umd/Recharts.js",
+  // Babel standalone (to parse JSX)
+  "https://unpkg.com/@babel/standalone@7.24.4/babel.min.js",
+];
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed: ' + src));
+    document.head.appendChild(s);
   });
+}
+
+async function loadApp() {
+  try {
+    // Load all dependencies in sequence (order matters!)
+    for (const src of SCRIPTS) {
+      await loadScript(src);
+    }
+
+    // Verify Recharts loaded correctly
+    if (typeof Recharts === 'undefined') {
+      throw new Error('Recharts failed to load');
+    }
+    if (typeof React === 'undefined') {
+      throw new Error('React failed to load');
+    }
+
+    // Now load app.jsx via Babel
+    const res = await fetch('app.jsx?v=' + Date.now());
+    const code = await res.text();
+    const transformed = Babel.transform(code, {
+      presets: ['react'],
+      filename: 'app.jsx',
+    }).code;
+
+    // Execute the transformed code
+    const fn = new Function(transformed);
+    fn();
+
+    // Show app, hide loader
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('root').style.display = 'block';
+
+  } catch (err) {
+    console.error('Load error:', err);
+    document.getElementById('loading').innerHTML =
+      '<span style="font-size:32px">😿</span>' +
+      '<span style="color:#ef4444;font-size:13px">ໂຫຼດບໍ່ສຳເລັດ: ' + err.message + '</span>' +
+      '<span style="color:#6b7280;font-size:11px">ກວດສອບ internet ແລ້ວ refresh</span>' +
+      '<button onclick="location.reload()" style="padding:8px 20px;background:#6366f1;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">🔄 Refresh</button>';
+  }
+}
+
+loadApp();
 </script>
 
 </body>
