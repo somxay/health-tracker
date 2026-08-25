@@ -4,53 +4,80 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ຄົນແພ້ກໍຕ້ອງດູແລຕົວເອງ</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;600;700&display=swap" rel="stylesheet" />
-
-  <!-- React + ReactDOM (ໂຫຼດຈາກ CDN ບໍ່ຕ້ອງ install ຫຍັງ) -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-  <!-- Babel: ແປ JSX ໃຫ້ browser ເຂົ້າໃຈ -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Recharts: ກາຟ -->
-  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-  <script src="https://unpkg.com/lucide-react@0.383.0/dist/umd/lucide-react.js"></script>
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { min-height: 100vh; background: #080a12; }
-    body { font-family: 'Noto Sans Lao', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; }
-    /* ຊ່ວຍ Babel ໂຫຼດ */
-    #loading {
-      display: flex; align-items: center; justify-content: center;
-      height: 100vh; color: #6b7280; font-size: 14px; gap: 10px;
-    }
-    .spin { animation: spin 1s linear infinite; display: inline-block; }
+    body { font-family: 'Noto Sans Lao', -apple-system, sans-serif; }
+    #loading { display:flex; align-items:center; justify-content:center; height:100vh; color:#6b7280; font-size:14px; gap:10px; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { display:inline-block; animation: spin 1s linear infinite; }
   </style>
 </head>
 <body>
 
-<div id="loading">
-  <span class="spin">🐱</span> ກຳລັງໂຫຼດ...
-</div>
+<div id="loading"><span class="spin">🐱</span> ກຳລັງໂຫຼດ...</div>
 <div id="root"></div>
 
-<!-- ໂຫຼດ app.jsx ດ້ວຍ Babel (type="text/babel") -->
-<script type="text/babel" src="app.jsx" data-type="module"></script>
+<!-- 1. React -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+<!-- 2. Recharts -->
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+
+<!-- 3. Lucide — ໃຊ້ version ທີ່ expose window.lucide -->
+<script src="https://unpkg.com/lucide@0.383.0/dist/umd/lucide.js"></script>
+
+<!-- 4. ສ້າງ lucideReact object ຈາກ lucide ທີ່ໂຫຼດແລ້ວ -->
+<script>
+  // lucide UMD ຈະ expose ເປັນ window.lucide
+  // ສ້າງ wrapper ໃຫ້ app.jsx ຫາໄດ້ໃນຊື່ lucideReact
+  window.lucideReact = {};
+
+  // icon names ທີ່ app.jsx ໃຊ້
+  const iconNames = [
+    'Activity','Heart','Moon','Flame','Droplets','Wind','Brain',
+    'TrendingUp','TrendingDown','ChevronRight','Send','Download',
+    'Camera','Target','Zap','X','MessageSquare','AlertCircle',
+    'CheckCircle2','Loader2','Globe','Dumbbell','Bike',
+    'PersonStanding','WifiOff','Layers','Percent'
+  ];
+
+  // lucide UMD ສ້าງ SVG icons — wrap ໃຫ້ເປັນ React component
+  iconNames.forEach(name => {
+    window.lucideReact[name] = function({ size=16, color='currentColor', style={}, ...props }) {
+      const el = lucide.createElement(lucide[name] || lucide.Activity, {});
+      return React.createElement('svg', {
+        xmlns: 'http://www.w3.org/2000/svg',
+        width: size, height: size,
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        stroke: color,
+        strokeWidth: 2,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+        style,
+        ...props,
+        dangerouslySetInnerHTML: { __html: el ? el.innerHTML : '' }
+      });
+    };
+    window.lucideReact[name].displayName = name;
+  });
+</script>
+
+<!-- 5. Babel -->
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+
+<!-- 6. App -->
+<script type="text/babel" src="app.jsx"></script>
 
 <script>
-  // ເຊື່ອງ loading screen ຫຼັງ app ໂຫຼດ
   window.addEventListener('load', () => {
     setTimeout(() => {
       const l = document.getElementById('loading');
       if (l) l.style.display = 'none';
-    }, 800);
+    }, 1000);
   });
 </script>
 
