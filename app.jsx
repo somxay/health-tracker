@@ -37,17 +37,11 @@ const PATHS = {
   Dumbbell:      "M6 5v14M18 5v14M6 8H2M6 16H2M22 8h-4M22 16h-4M8 8h8v8H8z",
   Bike:          "M5 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM19 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5 18H3l2-6 3-2 4 2h3l3 4M14 10h2l2 4",
   PersonStanding:"M12 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM8 21l4-4 4 4M12 7v6M9 12l-1 9M15 12l1 9",
-  Bluetooth:     "M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11",
-  BluetoothOff:  "M13 5.07V1l-7 7 3.13 3.13M5.5 13.5 2 17l5 5v-4.07M20 4l-4 4M4 20l16-16",
-  Watch:         "M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M9 2h6M9 22h6M12 9v3l2 2",
-  Wifi:          "M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
-  RefreshCw:     "M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16",
   WifiOff:       "M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
   Layers:        "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
   Percent:       "M19 5L5 19M6.5 6.5h.01M17.5 17.5h.01",
 };
 
-// Icon components
 const mkIcon = (key) => ({ size=16, color="currentColor", style={} }) =>
   Icon({ d: PATHS[key], size, color, style });
 
@@ -61,69 +55,31 @@ const CheckCircle2=mkIcon('CheckCircle2'), Globe=mkIcon('Globe');
 const Dumbbell=mkIcon('Dumbbell'), Bike=mkIcon('Bike'), PersonStanding=mkIcon('PersonStanding');
 const WifiOff=mkIcon('WifiOff'), Layers=mkIcon('Layers'), Percent=mkIcon('Percent');
 const VO2Icon=mkIcon('Wind');
-const Bluetooth=mkIcon('Bluetooth'), BluetoothOff=mkIcon('BluetoothOff');
-const Watch=mkIcon('Watch'), Wifi=mkIcon('Wifi'), RefreshCw=mkIcon('RefreshCw');
 
-
-// Spinner (animated)
 const Loader2 = ({ size=16, color="currentColor", style={} }) =>
   Icon({ d: PATHS.Loader2, size, color,
     style:{ ...style, animation:"spin 1s linear infinite", transformOrigin:"center" } });
 
-
-// ─── FITBIT AIR BLUETOOTH ─────────────────────────────────────────────────────
-// Fitbit uses BLE — Web Bluetooth API (Chrome/Edge เท่านั้น, ต้อง HTTPS)
-// Fitbit Air Service UUID (non-standard — ใช้ Generic Access + Heart Rate)
-const FITBIT_BT_SERVICES = {
-  heartRate:   '0000180d-0000-1000-8000-00805f9b34fb',
-  battery:     '0000180f-0000-1000-8000-00805f9b34fb',
-  deviceInfo:  '0000180a-0000-1000-8000-00805f9b34fb',
+// ─── FITBIT MANUAL SYNC (localStorage) ────────────────────────────────────────
+const DEFAULT_DATA = {
+  steps:9247,stepsGoal:10000,heartRate:68,hrv:42,
+  sleep:5.2,sleepGoal:8,deepSleep:0.8,remSleep:1.1,lightSleep:3.3,
+  calories:1840,caloriesGoal:2200,water:1.8,waterGoal:2.5,
+  spo2:98,spo2Goal:95,floors:12,floorsGoal:20,vo2max:48.2,bodyFat:18.4,
+  syncTime:null, syncSource:"demo",
 };
-
-async function scanFitbitAir() {
-  if (!navigator.bluetooth) {
-    throw new Error('NO_BT'); // Browser ບໍ່ຮອງຮັບ
-  }
-  const device = await navigator.bluetooth.requestDevice({
-    filters: [
-      { namePrefix: 'Fitbit' },
-      { namePrefix: 'FB' },
-    ],
-    optionalServices: Object.values(FITBIT_BT_SERVICES),
-  });
-  return device;
-}
-
-async function connectFitbitAir(device, onHR, onDisconnect) {
-  const server = await device.gatt.connect();
-  device.addEventListener('gattserverdisconnected', onDisconnect);
-
-  // Heart Rate
+function loadFitbitData() {
   try {
-    const hrService = await server.getPrimaryService(FITBIT_BT_SERVICES.heartRate);
-    const hrChar    = await hrService.getCharacteristic('00002a37-0000-1000-8000-00805f9b34fb');
-    await hrChar.startNotifications();
-    hrChar.addEventListener('characteristicvaluechanged', e => {
-      const val = e.target.value;
-      const flags = val.getUint8(0);
-      const hr = (flags & 0x1) ? val.getUint16(1, true) : val.getUint8(1);
-      onHR(hr);
-    });
-  } catch(e) { console.warn('HR service unavailable', e); }
-
-  // Battery
-  let battery = null;
-  try {
-    const batService = await server.getPrimaryService(FITBIT_BT_SERVICES.battery);
-    const batChar    = await batService.getCharacteristic('00002a19-0000-1000-8000-00805f9b34fb');
-    const batVal     = await batChar.readValue();
-    battery = batVal.getUint8(0);
-  } catch(e) { console.warn('Battery service unavailable', e); }
-
-  return { server, battery };
+    const saved = localStorage.getItem('fitbit_sync');
+    return saved ? { ...DEFAULT_DATA, ...JSON.parse(saved) } : { ...DEFAULT_DATA };
+  } catch(e) { return { ...DEFAULT_DATA }; }
 }
+function saveFitbitData(data) {
+  try { localStorage.setItem('fitbit_sync', JSON.stringify(data)); } catch(e) {}
+}
+const TODAY = loadFitbitData();
+const isBadSleep = s => s.sleep < 6 || s.deepSleep < 1.0;
 
-// ─── END FITBIT ───────────────────────────────────────────────────────────────
 // ─── I18N ─────────────────────────────────────────────────────────────────────
 const T = {
   lo: {
@@ -158,42 +114,26 @@ const T = {
     meowDisclaimer:"ໂຄ໊ດແມວໃຫ້ຄຳແນະນຳດ້ານສຸຂະຄາບ ບໍ່ແມ່ນທາງການແພດ.",
     qq1:"VO₂ Max ຂ້ອຍດີບໍ?", qq2:"ໄຂມັນຫຼາຍ ຄວນເຮັດຫຍັງ?", qq3:"ນອນໜ້ອຍ ເຮັດໄດ້ແນວໃດ?",
     openCoach:"ເປີດ Meow Coach", wellness:"ສຸຂະພາບ",
-    fitbitTitle:"Fitbit Air", fitbitSub:"ສະຖານະ Bluetooth",
-    btConnect:"ເຊື່ອມຕໍ່ Fitbit Air", btDisconnect:"ຕັດການເຊື່ອມຕໍ່",
-    btConnected:"ເຊື່ອມຕໍ່ແລ້ວ ✅", btDisconnected:"ຍັງບໍ່ໄດ້ເຊື່ອມ",
-    btSearching:"ກຳລັງຊອກຫາ Fitbit Air…",
-    btError:"ບໍ່ພົບ Fitbit Air. ກວດສອບ Bluetooth ໃນໂທລະສັບ.",
-    btNoBrowser:"Browser ບໍ່ຮອງຮັບ. ໃຊ້ Chrome ຫຼື Edge.",
-    btHttps:"ຕ້ອງ HTTPS (somxay.github.io) ເທົ່ານັ້ນ.",
-    btBattery:"ແບດ Fitbit", btLiveHR:"HR ສົດ",
-    btDevice:"ອຸປະກອນ", btRetry:"ລອງໃໝ່",
-    btTip:"ກົດ 'ເຊື່ອມຕໍ່' ຈາກນັ້ນເລືອກ Fitbit Air ຈາກລາຍຊື່",
-    btSteps:"ກ້າວ (Fitbit)", btSync:"ດຶງຂໍ້ມູນ Fitbit",
+    insightTitle1:"ໄລຍະ REM ຫຼຸດ", insightBody1:"REM 1.1h — ຕ່ຳ 18%. ປິດໜ້າຈໍ 45 ນາທີກ່ອນນອນ.",
+    insightTitle2:"HRV ດີຂຶ້ນ", insightBody2:"HRV 36→42 ms. ການຟື້ນຕົວດີ.",
+    insightTitle3:"VO₂ Max ດີ", insightBody3:"VO₂ 48 ml/kg/min — ລະດັບ Excellent.",
+    orType:"ຫຼື ພິມ:", mealPlaceholder:"ພິມຊື່ອາຫານ…",
     syncTitle:"📲 Sync ຂໍ້ມູນຈາກ Fitbit App",
     syncSub:"ເປີດ Fitbit app → ເຫັນຕົວເລກ → ໃສ່ຂ້າງລຸ່ມ",
     syncBtn:"💾 ບັນທຶກ & ອັບເດດ Dashboard",
-    syncDone:"✅ ບັນທຶກສຳເລັດ! Dashboard ອັບເດດແລ້ວ",
-    syncLast:"Sync ລ່າສຸດ:",
-    syncNever:"ຍັງບໍ່ເຄີຍ sync",
+    syncDone:"✅ ບັນທຶກສຳເລັດ!",
+    syncLast:"Sync ລ່າສຸດ:", syncNever:"ຍັງບໍ່ເຄີຍ sync",
     syncSource:"ແຫຼ່ງ: Fitbit App (Manual)",
-    syncReset:"🔄 ຣີເຊັດເປັນຂໍ້ມູນ Demo",
-    syncGuide:"📱 ວິທີດຶງຂໍ້ມູນຈາກ Fitbit App",
+    syncReset:"🔄 ຣີເຊັດເປັນ Demo",
+    syncGuide:"📱 ວິທີດຶງຂໍ້ມູນຈາກ Fitbit",
     syncStep1:"ເປີດ Fitbit app ໃນໂທລະສັບ",
     syncStep2:"ກົດ Today tab (ໜ້າຫຼັກ)",
     syncStep3:"ເຫັນ Steps, HR, Sleep, Calories",
     syncStep4:"ໃສ່ຕົວເລກເຫຼົ່ານັ້ນຂ້າງລຸ່ມ",
     syncStep5:"ກົດ 'ບັນທຶກ' — Dashboard ອັບເດດທັນທີ",
-    fSteps:"ກ້າວ", fHR:"ອັດຕາຫົວໃຈ (bpm)",
-    fSleep:"ນອນ (ຊົ່ວໂມງ)", fDeep:"ນອນເລິກ (ຊົ່ວໂມງ)",
-    fRem:"REM (ຊົ່ວໂມງ)", fCalories:"ແຄລໍລີທີ່ເຜົາ",
-    fWater:"ນ້ຳ (ລິດ)", fSpo2:"SpO₂ (%)",
-    fFloors:"ຊັ້ນໄດ", fHRV:"HRV (ms)",
-    fVo2:"VO₂ Max", fFat:"ໄຂມັນ (%)",
-    syncSection:"ຂໍ້ມູນ Fitbit Air",
-    insightTitle1:"ໄລຍະ REM ຫຼຸດ", insightBody1:"REM 1.1h — ຕ່ຳ 18%. ປິດໜ້າຈໍ 45 ນາທີກ່ອນນອນ.",
-    insightTitle2:"HRV ດີຂຶ້ນ", insightBody2:"HRV 36→42 ms. ການຟື້ນຕົວດີ.",
-    insightTitle3:"VO₂ Max ດີ", insightBody3:"VO₂ 48 ml/kg/min — ລະດັບ Excellent.",
-    orType:"ຫຼື ພິມ:", mealPlaceholder:"ພິມຊື່ອາຫານ… ເຊັ່ນ: ເຂົ້າໜຽວ + ໄກ່ຢ່າງ",
+    fSteps:"ກ້າວ", fHR:"ອັດຕາຫົວໃຈ", fSleep:"ນອນ (h)", fDeep:"ນອນເລິກ (h)",
+    fRem:"REM (h)", fCalories:"ແຄລໍລີ", fWater:"ນ້ຳ (L)", fSpo2:"SpO₂ (%)",
+    fFloors:"ຊັ້ນ", fHRV:"HRV (ms)", fVo2:"VO₂ Max", fFat:"ໄຂມັນ (%)",
   },
   en: {
     appName:"Even Losers Care for Themselves", appSub:"Good health starts with you",
@@ -227,97 +167,46 @@ const T = {
     meowDisclaimer:"Meow Coach provides wellness tips only. Not medical advice.",
     qq1:"Is my VO₂ Max good?", qq2:"Help with body fat?", qq3:"Help me sleep better",
     openCoach:"Open Meow Coach", wellness:"WELLNESS",
-    fitbitTitle:"Fitbit Air", fitbitSub:"ສະຖານະ Bluetooth",
-    btConnect:"ເຊື່ອມຕໍ່ Fitbit Air", btDisconnect:"ຕັດການເຊື່ອມຕໍ່",
-    btConnected:"ເຊື່ອມຕໍ່ແລ້ວ ✅", btDisconnected:"ຍັງບໍ່ໄດ້ເຊື່ອມ",
-    btSearching:"ກຳລັງຊອກຫາ Fitbit Air…",
-    btError:"ບໍ່ພົບ Fitbit Air. ກວດສອບ Bluetooth ໃນໂທລະສັບ.",
-    btNoBrowser:"Browser ບໍ່ຮອງຮັບ. ໃຊ້ Chrome ຫຼື Edge.",
-    btHttps:"ຕ້ອງ HTTPS (somxay.github.io) ເທົ່ານັ້ນ.",
-    btBattery:"ແບດ Fitbit", btLiveHR:"HR ສົດ",
-    btDevice:"ອຸປະກອນ", btRetry:"ລອງໃໝ່",
-    btTip:"ກົດ 'ເຊື່ອມຕໍ່' ຈາກນັ້ນເລືອກ Fitbit Air ຈາກລາຍຊື່",
-    btSteps:"ກ້າວ (Fitbit)", btSync:"ດຶງຂໍ້ມູນ Fitbit",
-    fitbitTitle:"Fitbit Air", fitbitSub:"Bluetooth Status",
-    btConnect:"Connect Fitbit Air", btDisconnect:"Disconnect",
-    btConnected:"Connected ✅", btDisconnected:"Not connected",
-    btSearching:"Scanning for Fitbit Air…",
-    btError:"Fitbit Air not found. Check phone Bluetooth.",
-    btNoBrowser:"Browser not supported. Use Chrome or Edge.",
-    btHttps:"HTTPS required (somxay.github.io) only.",
-    btBattery:"Fitbit Battery", btLiveHR:"Live HR",
-    btDevice:"Device", btRetry:"Try Again",
-    btTip:"Click Connect then pick Fitbit Air from the list",
-    btSteps:"Steps (Fitbit)", btSync:"Sync Fitbit",
-    syncTitle:"📲 Sync ຂໍ້ມູນຈາກ Fitbit App",
-    syncSub:"ເປີດ Fitbit app → ເຫັນຕົວເລກ → ໃສ່ຂ້າງລຸ່ມ",
-    syncBtn:"💾 ບັນທຶກ & ອັບເດດ Dashboard",
-    syncDone:"✅ ບັນທຶກສຳເລັດ! Dashboard ອັບເດດແລ້ວ",
-    syncLast:"Sync ລ່າສຸດ:",
-    syncNever:"ຍັງບໍ່ເຄີຍ sync",
-    syncSource:"ແຫຼ່ງ: Fitbit App (Manual)",
-    syncReset:"🔄 ຣີເຊັດເປັນຂໍ້ມູນ Demo",
-    syncGuide:"📱 ວິທີດຶງຂໍ້ມູນຈາກ Fitbit App",
-    syncStep1:"ເປີດ Fitbit app ໃນໂທລະສັບ",
-    syncStep2:"ກົດ Today tab (ໜ້າຫຼັກ)",
-    syncStep3:"ເຫັນ Steps, HR, Sleep, Calories",
-    syncStep4:"ໃສ່ຕົວເລກເຫຼົ່ານັ້ນຂ້າງລຸ່ມ",
-    syncStep5:"ກົດ 'ບັນທຶກ' — Dashboard ອັບເດດທັນທີ",
-    fSteps:"ກ້າວ", fHR:"ອັດຕາຫົວໃຈ (bpm)",
-    fSleep:"ນອນ (ຊົ່ວໂມງ)", fDeep:"ນອນເລິກ (ຊົ່ວໂມງ)",
-    fRem:"REM (ຊົ່ວໂມງ)", fCalories:"ແຄລໍລີທີ່ເຜົາ",
-    fWater:"ນ້ຳ (ລິດ)", fSpo2:"SpO₂ (%)",
-    fFloors:"ຊັ້ນໄດ", fHRV:"HRV (ms)",
-    fVo2:"VO₂ Max", fFat:"ໄຂມັນ (%)",
-    syncSection:"ຂໍ້ມູນ Fitbit Air",
-    syncTitle:"📲 Sync Data from Fitbit App",
-    syncSub:"Open Fitbit app → see your numbers → enter below",
-    syncBtn:"💾 Save & Update Dashboard",
-    syncDone:"✅ Saved! Dashboard updated.",
-    syncLast:"Last synced:",
-    syncNever:"Never synced",
-    syncSource:"Source: Fitbit App (Manual)",
-    syncReset:"🔄 Reset to Demo Data",
-    syncGuide:"📱 How to get data from Fitbit App",
-    syncStep1:"Open Fitbit app on your phone",
-    syncStep2:"Go to Today tab (home screen)",
-    syncStep3:"Note Steps, HR, Sleep, Calories",
-    syncStep4:"Enter those numbers below",
-    syncStep5:"Tap Save — Dashboard updates instantly",
-    fSteps:"Steps", fHR:"Heart Rate (bpm)",
-    fSleep:"Sleep (hours)", fDeep:"Deep Sleep (hours)",
-    fRem:"REM Sleep (hours)", fCalories:"Active Calories",
-    fWater:"Water (liters)", fSpo2:"SpO₂ (%)",
-    fFloors:"Floors climbed", fHRV:"HRV (ms)",
-    fVo2:"VO₂ Max", fFat:"Body Fat (%)",
-    syncSection:"Fitbit Air Data",
     insightTitle1:"REM Sleep Dip", insightBody1:"REM avg 1.1h — 18% below norm.",
     insightTitle2:"HRV Trending Up", insightBody2:"HRV 36→42 ms. Recovery improving.",
     insightTitle3:"VO₂ Max Strong", insightBody3:"VO₂ 48 ml/kg/min — Excellent.",
-    orType:"Or type:", mealPlaceholder:"Type a meal… e.g. Sticky rice + chicken",
+    orType:"Or type:", mealPlaceholder:"Type a meal…",
+    syncTitle:"📲 Sync Data from Fitbit App",
+    syncSub:"Open Fitbit app → note your numbers → enter below",
+    syncBtn:"💾 Save & Update Dashboard",
+    syncDone:"✅ Saved successfully!",
+    syncLast:"Last synced:", syncNever:"Never synced",
+    syncSource:"Source: Fitbit App (Manual)",
+    syncReset:"🔄 Reset to Demo",
+    syncGuide:"📱 How to sync from Fitbit",
+    syncStep1:"Open Fitbit app on your phone",
+    syncStep2:"Go to Today tab",
+    syncStep3:"Note Steps, HR, Sleep, Calories",
+    syncStep4:"Enter those numbers below",
+    syncStep5:"Tap Save — Dashboard updates instantly",
+    fSteps:"Steps", fHR:"Heart Rate (bpm)", fSleep:"Sleep (h)", fDeep:"Deep Sleep (h)",
+    fRem:"REM Sleep (h)", fCalories:"Active Calories", fWater:"Water (L)", fSpo2:"SpO₂ (%)",
+    fFloors:"Floors", fHRV:"HRV (ms)", fVo2:"VO₂ Max", fFat:"Body Fat (%)",
   }
 };
 
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
-// ── Load from localStorage (Fitbit manual sync) or use defaults ──────────────
-const DEFAULT_DATA = {
-  steps:9247,stepsGoal:10000,heartRate:68,hrv:42,
-  sleep:5.2,sleepGoal:8,deepSleep:0.8,remSleep:1.1,lightSleep:3.3,
-  calories:1840,caloriesGoal:2200,water:1.8,waterGoal:2.5,
-  spo2:98,spo2Goal:95,floors:12,floorsGoal:20,vo2max:48.2,bodyFat:18.4,
-  syncTime:null, syncSource:"mock",
-};
-function loadFitbitData() {
-  try {
-    const saved = localStorage.getItem('fitbit_sync');
-    return saved ? { ...DEFAULT_DATA, ...JSON.parse(saved) } : { ...DEFAULT_DATA };
-  } catch(e) { return { ...DEFAULT_DATA }; }
+function calcWellness(m) {
+  return Math.round(
+    Math.min(100,(m.sleep/m.sleepGoal)*100)*0.28+
+    Math.min(100,(m.deepSleep/1.5)*100)*0.12+
+    Math.min(100,(m.hrv/60)*100)*0.25+
+    Math.min(100,(m.calories/m.caloriesGoal)*100)*0.15+
+    Math.min(100,((m.spo2-88)/12)*100)*0.10+
+    Math.min(100,(m.vo2max/60)*100)*0.05+
+    Math.max(0,100-(m.bodyFat-10)*2)*0.05
+  );
 }
-function saveFitbitData(data) {
-  try { localStorage.setItem('fitbit_sync', JSON.stringify(data)); } catch(e) {}
-}
-const TODAY = loadFitbitData();
-const isBadSleep = s => s.sleep < 6 || s.deepSleep < 1.0;
+const SCORE = calcWellness(TODAY);
+
+const vo2Cat=(v,l)=>v>=55?(l==="lo"?"ດີເລີດ🏆":"Elite🏆"):v>=47?(l==="lo"?"ດີຫຼາຍ✅":"Excellent✅"):v>=38?(l==="lo"?"ດີ👍":"Good👍"):(l==="lo"?"ກາງ⚠️":"Avg⚠️");
+const bfCat=(b,l)=>b<18?(l==="lo"?"ດີ👍":"Fit👍"):b<25?(l==="lo"?"ປານກາງ✅":"Normal✅"):(l==="lo"?"ສູງ⚠️":"High⚠️");
+const pct=(v,g)=>Math.min(100,Math.round(v/g*100));
 
 const genW = (base,v) => ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(day=>({
   day, value:Math.round(base+(Math.random()-.5)*v)
@@ -338,23 +227,6 @@ const RADAR=[
   {s:"Steps",A:92},{s:"Sleep",A:65},{s:"HRV",A:78},
   {s:"VO₂",A:80},{s:"SpO₂",A:98},{s:"Fat",A:73},
 ];
-
-function calcWellness(m) {
-  return Math.round(
-    Math.min(100,(m.sleep/m.sleepGoal)*100)*0.28+
-    Math.min(100,(m.deepSleep/1.5)*100)*0.12+
-    Math.min(100,(m.hrv/60)*100)*0.25+
-    Math.min(100,(m.calories/m.caloriesGoal)*100)*0.15+
-    Math.min(100,((m.spo2-88)/12)*100)*0.10+
-    Math.min(100,(m.vo2max/60)*100)*0.05+
-    Math.max(0,100-(m.bodyFat-10)*2)*0.05
-  );
-}
-const SCORE = calcWellness(TODAY);
-
-const vo2Cat=(v,l)=>v>=55?(l==="lo"?"ດີເລີດ🏆":"Elite🏆"):v>=47?(l==="lo"?"ດີຫຼາຍ✅":"Excellent✅"):v>=38?(l==="lo"?"ດີ👍":"Good👍"):(l==="lo"?"ກາງ⚠️":"Avg⚠️");
-const bfCat=(b,l)=>b<18?(l==="lo"?"ດີ👍":"Fit👍"):b<25?(l==="lo"?"ປານກາງ✅":"Normal✅"):(l==="lo"?"ສູງ⚠️":"High⚠️");
-const pct=(v,g)=>Math.min(100,Math.round(v/g*100));
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 async function callAI(messages,system){
@@ -462,31 +334,23 @@ function HealthApp(){
   const [mealLog,setMealLog]=useState([]);
   const [mealLoading,setMealLoading]=useState(false);
   const [imgPreview,setImgPreview]=useState(null);
-  // Fitbit Manual Sync state
-  const [syncData,setSyncData]=useState(()=>loadFitbitData());
-  const [syncDone,setSyncDone]=useState(false);
-  const [syncForm,setSyncForm]=useState({
-    steps:String(TODAY.steps), heartRate:String(TODAY.heartRate),
-    hrv:String(TODAY.hrv), sleep:String(TODAY.sleep),
-    deepSleep:String(TODAY.deepSleep), remSleep:String(TODAY.remSleep||1.1),
-    calories:String(TODAY.calories), water:String(TODAY.water),
-    spo2:String(TODAY.spo2), floors:String(TODAY.floors),
-    vo2max:String(TODAY.vo2max), bodyFat:String(TODAY.bodyFat),
-  });
-  // Fitbit BLE state
-  const [btState,setBtState]=useState("idle"); // idle|searching|connected|error|nobrowser|nohttps
-  const [btDevice,setBtDevice]=useState(null);
-  const [btServer,setBtServer]=useState(null);
-  const [btBattery,setBtBattery]=useState(null);
-  const [btLiveHR,setBtLiveHR]=useState(null);
-  const [btDeviceName,setBtDeviceName]=useState(null);
   const fileRef=useRef(null);
   const chatEnd=useRef(null);
 
+  // Fitbit Manual Sync
+  const [syncData,setSyncData]=useState(()=>loadFitbitData());
+  const [syncForm,setSyncForm]=useState({
+    steps:String(TODAY.steps), heartRate:String(TODAY.heartRate), hrv:String(TODAY.hrv),
+    sleep:String(TODAY.sleep), deepSleep:String(TODAY.deepSleep), remSleep:String(TODAY.remSleep||1.1),
+    calories:String(TODAY.calories), water:String(TODAY.water), spo2:String(TODAY.spo2),
+    floors:String(TODAY.floors), vo2max:String(TODAY.vo2max), bodyFat:String(TODAY.bodyFat),
+  });
+  const [syncMsg,setSyncMsg]=useState(false);
+
   useEffect(()=>{
     const w=lang==="lo"
-      ?`ເມ້ຍ~ 🐱 ຂ້ອຍຄື ໂຄ໊ດແມວ! ${bad?`ເຈົ້ານອນ ${TODAY.sleep}h?! ໄປ​ນອນ​ກ່ອນ! 😹🔥`:`ສຸຂະພາບ ${SCORE}/100 · VO₂ ${TODAY.vo2max} · ໄຂມັນ ${TODAY.bodyFat}% — ໂອ! ຢາກໃຫ້ຊ່ວຍຫຍັງ? 😸`}`
-      :`Meow~ 🐱 I'm Meow Coach! ${bad?`You only slept ${TODAY.sleep}h?! GO TO BED! 😹🔥`:`Wellness ${SCORE}/100 · VO₂ ${TODAY.vo2max} · Body Fat ${TODAY.bodyFat}% — decent! How can I help? 😸`}`;
+      ?`ເມ້ຍ~ 🐱 ${bad?`ເຈົ້ານອນ ${TODAY.sleep}h VO₂ ${TODAY.vo2max}?! ໄປນອນ! 😹🔥`:`ສຸຂະພາບ ${SCORE}/100 ດີ! ຊ່ວຍຫຍັງ? 😸`}`
+      :`Meow~ 🐱 ${bad?`Only slept ${TODAY.sleep}h?! GO TO BED! 😹🔥`:`Wellness ${SCORE}/100 — nice! How can I help? 😸`}`;
     setMsgs([{role:"assistant",content:w}]);
   },[lang]);
 
@@ -519,7 +383,7 @@ function HealthApp(){
     setMealLoading(false);
   },[mealInput,imgPreview,lang]);
 
-  const handleSyncSave = useCallback(() => {
+  const handleSyncSave=useCallback(()=>{
     const n = v => parseFloat(v)||0;
     const updated = {
       ...DEFAULT_DATA,
@@ -541,51 +405,20 @@ function HealthApp(){
     };
     saveFitbitData(updated);
     setSyncData(updated);
-    setSyncDone(true);
-    setTimeout(()=>setSyncDone(false), 3000);
+    setSyncMsg(true);
+    setTimeout(()=>setSyncMsg(false), 3000);
   }, [syncForm]);
 
-  const handleSyncReset = useCallback(() => {
+  const handleSyncReset=useCallback(()=>{
     localStorage.removeItem('fitbit_sync');
     setSyncData({...DEFAULT_DATA});
     setSyncForm({
-      steps:String(DEFAULT_DATA.steps), heartRate:String(DEFAULT_DATA.heartRate),
-      hrv:String(DEFAULT_DATA.hrv), sleep:String(DEFAULT_DATA.sleep),
-      deepSleep:String(DEFAULT_DATA.deepSleep), remSleep:String(DEFAULT_DATA.remSleep||1.1),
-      calories:String(DEFAULT_DATA.calories), water:String(DEFAULT_DATA.water),
-      spo2:String(DEFAULT_DATA.spo2), floors:String(DEFAULT_DATA.floors),
-      vo2max:String(DEFAULT_DATA.vo2max), bodyFat:String(DEFAULT_DATA.bodyFat),
+      steps:String(DEFAULT_DATA.steps), heartRate:String(DEFAULT_DATA.heartRate), hrv:String(DEFAULT_DATA.hrv),
+      sleep:String(DEFAULT_DATA.sleep), deepSleep:String(DEFAULT_DATA.deepSleep), remSleep:String(DEFAULT_DATA.remSleep||1.1),
+      calories:String(DEFAULT_DATA.calories), water:String(DEFAULT_DATA.water), spo2:String(DEFAULT_DATA.spo2),
+      floors:String(DEFAULT_DATA.floors), vo2max:String(DEFAULT_DATA.vo2max), bodyFat:String(DEFAULT_DATA.bodyFat),
     });
   }, []);
-
-  const connectFitbit = useCallback(async () => {
-    if (!navigator.bluetooth) { setBtState("nobrowser"); return; }
-    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-      setBtState("nohttps"); return;
-    }
-    setBtState("searching"); setBtLiveHR(null); setBtBattery(null);
-    try {
-      const device = await scanFitbitAir();
-      setBtDeviceName(device.name || "Fitbit Air");
-      const { server, battery } = await connectFitbitAir(
-        device,
-        hr => setBtLiveHR(hr),
-        () => { setBtState("idle"); setBtDevice(null); setBtServer(null); setBtLiveHR(null); }
-      );
-      setBtDevice(device); setBtServer(server);
-      setBtBattery(battery); setBtState("connected");
-    } catch(e) {
-      console.error(e);
-      if (e.name === "NotFoundError") setBtState("idle"); // user cancelled
-      else setBtState("error");
-    }
-  }, []);
-
-  const disconnectFitbit = useCallback(() => {
-    if (btServer?.connected) btServer.disconnect();
-    setBtState("idle"); setBtDevice(null); setBtServer(null);
-    setBtLiveHR(null); setBtBattery(null); setBtDeviceName(null);
-  }, [btServer]);
 
   const css=`
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -640,6 +473,8 @@ function HealthApp(){
     .fab:hover{transform:scale(1.09);}
     @keyframes spin{to{transform:rotate(360deg)}}
     @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+    input[type=number]{-moz-appearance:textfield}
+    input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   `;
 
   return React.createElement('div',{className:"app"},
@@ -653,11 +488,8 @@ function HealthApp(){
           React.createElement('div',{className:"aname"},t.appName),
           React.createElement('div',{className:"asub"},t.appSub))),
       React.createElement('div',{className:"hr"},
-        React.createElement('button',{className:"lbtn",onClick:()=>setLang(l=>l==="lo"?"en":"lo")},
-          React.createElement(Globe,{size:10}),lang==="lo"?"EN":"ລາວ"),
-        React.createElement('button',{className:"sbadge",onClick:()=>{setSyncing(true);setTimeout(()=>setSyncing(false),2200);}},
-          syncing?React.createElement(Loader2,{size:10,color:"#6b7280"}):React.createElement(CheckCircle2,{size:10,color:"#10b981"}),
-          syncing?t.syncing:t.synced),
+        React.createElement('button',{className:"lbtn",onClick:()=>setLang(l=>l==="lo"?"en":"lo")},React.createElement(Globe,{size:10}),lang==="lo"?"EN":"ລາວ"),
+        React.createElement('button',{className:"sbadge"},React.createElement(CheckCircle2,{size:10,color:"#10b981"}),t.synced),
         React.createElement('div',{className:"av"},"🐱"))),
 
     // NAV
@@ -667,11 +499,7 @@ function HealthApp(){
 
     // ── DASHBOARD ──
     tab==="dashboard"&&React.createElement('div',null,
-      bad&&React.createElement('div',{className:"roast"},
-        React.createElement('span',{style:{fontSize:17}},"😹"),
-        React.createElement('span',null,lang==="lo"?`ໂຄ໊ດແມວ: ເຈົ້ານອນ ${TODAY.sleep}h · Deep ${TODAY.deepSleep}h. ເປີດ Meow Coach 👇`:`Meow: You slept ${TODAY.sleep}h & Deep ${TODAY.deepSleep}h. Open Meow Coach 👇`)),
-
-      // Wellness + Radar
+      bad&&React.createElement('div',{className:"roast"},React.createElement('span',{style:{fontSize:17}},"😹"),React.createElement('span',null,lang==="lo"?`ໂຄ໊ດແມວ: ເຈົ້ານອນ ${TODAY.sleep}h · Deep ${TODAY.deepSleep}h. ເປີດ Meow Coach 👇`:`Meow: Slept ${TODAY.sleep}h & Deep ${TODAY.deepSleep}h. Open Meow Coach 👇`)),
       React.createElement('div',{style:{display:"grid",gridTemplateColumns:"auto 1fr",gap:10,marginBottom:8}},
         React.createElement('div',{className:"wcard",style:{margin:0}},
           React.createElement(WellnessRing,{score:SCORE,label:t.wellness}),
@@ -682,8 +510,7 @@ function HealthApp(){
             React.createElement('div',{style:{display:"flex",gap:8,flexWrap:"wrap"}},
               [[t.sleep,"#8b5cf6",pct(TODAY.sleep,TODAY.sleepGoal)],[t.steps,"#10b981",pct(TODAY.steps,TODAY.stepsGoal)],[t.water,"#06b6d4",pct(TODAY.water,TODAY.waterGoal)]].map(([lb,c,p])=>
                 React.createElement('div',{key:lb,style:{display:"flex",alignItems:"center",gap:3}},
-                  React.createElement(MiniRing,{pct:p,color:c}),
-                  React.createElement('span',{style:{fontSize:9,color:"#6b7280"}},lb)))))),
+                  React.createElement(MiniRing,{pct:p,color:c}),React.createElement('span',{style:{fontSize:9,color:"#6b7280"}},lb)))))),
         React.createElement('div',{className:"cc",style:{margin:0}},
           React.createElement('div',{style:{fontSize:11,fontWeight:600,color:"white",marginBottom:4}},"Wellness Radar"),
           React.createElement(ResponsiveContainer,{width:"100%",height:140},
@@ -692,7 +519,6 @@ function HealthApp(){
               React.createElement(PolarAngleAxis,{dataKey:"s",tick:{fill:"#4b5563",fontSize:9}}),
               React.createElement(Radar,{dataKey:"A",stroke:"#6366f1",fill:"#6366f1",fillOpacity:0.2}))))),
 
-      // Metrics
       React.createElement('div',{className:"st",style:{marginBottom:8}},t.todayMetrics),
       React.createElement('div',{className:"g2",style:{marginBottom:8}},
         React.createElement(MetricCard,{icon:Activity,label:t.steps,value:TODAY.steps.toLocaleString(),unit:"",goal:TODAY.stepsGoal,color:"#10b981",trend:+5}),
@@ -707,7 +533,6 @@ function HealthApp(){
         React.createElement(MetricCard,{icon:VO2Icon,label:t.vo2max,value:TODAY.vo2max,unit:" ml/kg",color:"#a78bfa",subLabel:t.vo2maxSub,badge:vo2Cat(TODAY.vo2max,lang)}),
         React.createElement(MetricCard,{icon:Percent,label:t.bodyFat,value:TODAY.bodyFat,unit:"%",color:"#f59e0b",subLabel:t.bodyFatSub,badge:bfCat(TODAY.bodyFat,lang)})),
 
-      // Sleep stages
       React.createElement('div',{className:"st"},t.sleepStages),
       React.createElement('div',{className:"cc",style:{marginBottom:14}},
         React.createElement('div',{style:{display:"flex",gap:10,marginBottom:9,flexWrap:"wrap"}},
@@ -721,47 +546,36 @@ function HealthApp(){
             React.createElement(Bar,{dataKey:"value",radius:[0,5,5,0],fill:"#6366f1"}),
             React.createElement(Tooltip,{content:React.createElement(CT)})))),
 
-      // SpO₂ chart
       React.createElement('div',{className:"cc",style:{marginBottom:14}},
         React.createElement('div',{style:{fontSize:11,fontWeight:600,color:"white",marginBottom:2}},"SpO₂ — 7 Days"),
-        React.createElement('div',{style:{fontSize:10,color:"#4b5563",marginBottom:10}},lang==="lo"?"ລະດັບ O₂ ໃນເລືອດ (%)":"Blood oxygen level (%)"),
         React.createElement(ResponsiveContainer,{width:"100%",height:90},
           React.createElement(AreaChart,{data:WEEK.spo2},
-            React.createElement('defs',null,React.createElement('linearGradient',{id:"gspo2",x1:"0",y1:"0",x2:"0",y2:"1"},
-              React.createElement('stop',{offset:"5%",stopColor:"#34d399",stopOpacity:0.3}),
-              React.createElement('stop',{offset:"95%",stopColor:"#34d399",stopOpacity:0}))),
+            React.createElement('defs',null,React.createElement('linearGradient',{id:"gspo2",x1:"0",y1:"0",x2:"0",y2:"1"},React.createElement('stop',{offset:"5%",stopColor:"#34d399",stopOpacity:0.3}),React.createElement('stop',{offset:"95%",stopColor:"#34d399",stopOpacity:0}))),
             React.createElement(XAxis,{dataKey:"day",tick:{fill:"#4b5563",fontSize:9},axisLine:false,tickLine:false}),
             React.createElement(YAxis,{hide:true,domain:[88,100]}),
             React.createElement(Tooltip,{content:React.createElement(CT)}),
             React.createElement(Area,{type:"monotone",dataKey:"value",stroke:"#34d399",strokeWidth:2,fill:"url(#gspo2)",dot:false})))),
 
-      // VO₂ chart
       React.createElement('div',{className:"cc",style:{marginBottom:14}},
         React.createElement('div',{style:{fontSize:11,fontWeight:600,color:"white",marginBottom:2}},"VO₂ Max — 30 Days"),
         React.createElement(ResponsiveContainer,{width:"100%",height:90},
           React.createElement(AreaChart,{data:WEEK.vo2max},
-            React.createElement('defs',null,React.createElement('linearGradient',{id:"gvo2",x1:"0",y1:"0",x2:"0",y2:"1"},
-              React.createElement('stop',{offset:"5%",stopColor:"#a78bfa",stopOpacity:0.3}),
-              React.createElement('stop',{offset:"95%",stopColor:"#a78bfa",stopOpacity:0}))),
+            React.createElement('defs',null,React.createElement('linearGradient',{id:"gvo2",x1:"0",y1:"0",x2:"0",y2:"1"},React.createElement('stop',{offset:"5%",stopColor:"#a78bfa",stopOpacity:0.3}),React.createElement('stop',{offset:"95%",stopColor:"#a78bfa",stopOpacity:0}))),
             React.createElement(XAxis,{dataKey:"day",tick:{fill:"#4b5563",fontSize:9},axisLine:false,tickLine:false}),
             React.createElement(YAxis,{hide:true,domain:[44,54]}),
             React.createElement(Tooltip,{content:React.createElement(CT)}),
             React.createElement(Area,{type:"monotone",dataKey:"value",stroke:"#a78bfa",strokeWidth:2,fill:"url(#gvo2)",dot:false})))),
 
-      // Body Fat chart
       React.createElement('div',{className:"cc",style:{marginBottom:14}},
         React.createElement('div',{style:{fontSize:11,fontWeight:600,color:"white",marginBottom:2}},"Body Fat % — 30 Days"),
         React.createElement(ResponsiveContainer,{width:"100%",height:90},
           React.createElement(AreaChart,{data:WEEK.bodyFat},
-            React.createElement('defs',null,React.createElement('linearGradient',{id:"gbf",x1:"0",y1:"0",x2:"0",y2:"1"},
-              React.createElement('stop',{offset:"5%",stopColor:"#f59e0b",stopOpacity:0.3}),
-              React.createElement('stop',{offset:"95%",stopColor:"#f59e0b",stopOpacity:0}))),
+            React.createElement('defs',null,React.createElement('linearGradient',{id:"gbf",x1:"0",y1:"0",x2:"0",y2:"1"},React.createElement('stop',{offset:"5%",stopColor:"#f59e0b",stopOpacity:0.3}),React.createElement('stop',{offset:"95%",stopColor:"#f59e0b",stopOpacity:0}))),
             React.createElement(XAxis,{dataKey:"day",tick:{fill:"#4b5563",fontSize:9},axisLine:false,tickLine:false}),
             React.createElement(YAxis,{hide:true,domain:[16,21]}),
             React.createElement(Tooltip,{content:React.createElement(CT)}),
             React.createElement(Area,{type:"monotone",dataKey:"value",stroke:"#f59e0b",strokeWidth:2,fill:"url(#gbf)",dot:false})))),
 
-      // Insights
       React.createElement('div',{className:"st"},t.meowInsights),
       INSIGHTS.map(ins=>React.createElement('div',{key:ins.id,className:"icard",onClick:()=>{setChatOpen(true);setInput(ins.title);}},
         React.createElement('div',{style:{background:`${ins.color}18`,borderRadius:9,padding:7,flexShrink:0}},React.createElement(ins.icon,{size:14,color:ins.color})),
@@ -779,18 +593,16 @@ function HealthApp(){
         React.createElement('div',{style:{flex:1}},
           React.createElement('div',{style:{fontSize:13,fontWeight:700,marginBottom:4}},s.type),
           React.createElement('div',{style:{display:"flex",gap:12,flexWrap:"wrap"}},
-            [[t.duration,s.duration,"white"],[t.hrZone,s.hrZone,s.color],[t.burned,`${s.burned} kcal`,"#f59e0b"],...(s.dist?[["Dist",s.dist,"white"]]:[])].map(([l,v,c])=>
+            [["Duration",s.duration,"white"],["HR Zone",s.hrZone,s.color],["Burned",`${s.burned} kcal`,"#f59e0b"],...(s.dist?[["Dist",s.dist,"white"]]:[])].map(([l,v,c])=>
               React.createElement('div',{key:l},
                 React.createElement('div',{style:{fontSize:9,color:"#4b5563"}},l),
                 React.createElement('div',{style:{fontSize:12,fontWeight:600,color:c}},v))))),
-        React.createElement('div',{style:{background:`${s.color}18`,borderRadius:6,padding:"3px 8px",fontSize:10,color:s.color,fontWeight:600}},s.hrZone))),
+        React.createElement('div',{style:{background:`${s.color}18`,borderRadius:6,padding:"3px 8px",fontSize:10,color:s.color,fontWeight:600,flexShrink:0}},s.hrZone))),
       React.createElement('div',{className:"cc"},
         React.createElement('div',{style:{fontSize:12,fontWeight:600,color:"white",marginBottom:2}},"Heart Rate — Today"),
         React.createElement(ResponsiveContainer,{width:"100%",height:100},
           React.createElement(AreaChart,{data:WEEK.heartRate},
-            React.createElement('defs',null,React.createElement('linearGradient',{id:"ghr",x1:"0",y1:"0",x2:"0",y2:"1"},
-              React.createElement('stop',{offset:"5%",stopColor:"#ef4444",stopOpacity:0.3}),
-              React.createElement('stop',{offset:"95%",stopColor:"#ef4444",stopOpacity:0}))),
+            React.createElement('defs',null,React.createElement('linearGradient',{id:"ghr",x1:"0",y1:"0",x2:"0",y2:"1"},React.createElement('stop',{offset:"5%",stopColor:"#ef4444",stopOpacity:0.3}),React.createElement('stop',{offset:"95%",stopColor:"#ef4444",stopOpacity:0}))),
             React.createElement(XAxis,{dataKey:"day",tick:{fill:"#4b5563",fontSize:9},axisLine:false,tickLine:false}),
             React.createElement(YAxis,{hide:true}),
             React.createElement(Tooltip,{content:React.createElement(CT)}),
@@ -801,31 +613,19 @@ function HealthApp(){
       React.createElement('div',{className:"st"},t.aiMealLogger),
       React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:13,padding:13,marginBottom:11}},
         React.createElement('div',{className:"uz",onClick:()=>fileRef.current?.click()},
-          imgPreview
-            ?React.createElement('img',{src:imgPreview,alt:"meal",style:{width:"100%",maxHeight:170,objectFit:"cover",borderRadius:9}})
-            :React.createElement('div',null,React.createElement(Camera,{size:26,color:"#4b5563",style:{margin:"0 auto 7px"}}),React.createElement('div',{style:{fontSize:11,color:"#4b5563"}},t.dropHere))),
+          imgPreview?React.createElement('img',{src:imgPreview,alt:"meal",style:{width:"100%",maxHeight:170,objectFit:"cover",borderRadius:9}}):
+            React.createElement('div',null,React.createElement(Camera,{size:26,color:"#4b5563",style:{margin:"0 auto 7px"}}),React.createElement('div',{style:{fontSize:11,color:"#4b5563"}},t.dropHere))),
         React.createElement('input',{ref:fileRef,type:"file",accept:"image/*",style:{display:"none"},onChange:handleImg}),
         React.createElement('div',{style:{marginTop:9,marginBottom:7,fontSize:10,color:"#6b7280"}},t.orType),
         React.createElement('div',{style:{display:"flex",gap:6}},
-          React.createElement('textarea',{className:"ci",style:{height:50},placeholder:t.mealPlaceholder,
-            value:mealInput,onChange:e=>setMealInput(e.target.value),
-            onKeyDown:e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();logMeal();}}}),
-          React.createElement('button',{className:"sb",onClick:logMeal,disabled:mealLoading||(!mealInput.trim()&&!imgPreview)},
-            mealLoading?React.createElement(Loader2,{size:14,color:"white"}):React.createElement(Send,{size:14,color:"white"}))),
-        mealLoading&&React.createElement('div',{style:{fontSize:11,color:"#6366f1",marginTop:6,display:"flex",alignItems:"center",gap:5}},
-          React.createElement(Loader2,{size:11,color:"#6366f1"}),t.analyzing),
+          React.createElement('textarea',{className:"ci",style:{height:50},placeholder:t.mealPlaceholder,value:mealInput,onChange:e=>setMealInput(e.target.value),onKeyDown:e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();logMeal();}}}),
+          React.createElement('button',{className:"sb",onClick:logMeal,disabled:mealLoading||(!mealInput.trim()&&!imgPreview)},mealLoading?React.createElement(Loader2,{size:14,color:"white"}):React.createElement(Send,{size:14,color:"white"}))),
+        mealLoading&&React.createElement('div',{style:{fontSize:11,color:"#6366f1",marginTop:6,display:"flex",alignItems:"center",gap:5}},React.createElement(Loader2,{size:11,color:"#6366f1"}),t.analyzing),
         React.createElement('div',{className:"disc"},React.createElement(AlertCircle,{size:12,style:{flexShrink:0,marginTop:1}}),t.mealDisclaimer)),
-      mealLog.length>0&&React.createElement('div',null,
-        React.createElement('div',{className:"st"},t.todayLog),
-        mealLog.map(e=>React.createElement('div',{key:e.id,className:"mli"},
-          React.createElement('div',{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},
-            React.createElement('span',{style:{fontSize:12,fontWeight:600}},e.meal),
-            React.createElement('span',{style:{fontSize:10,color:"#4b5563"}},e.time)),
-          React.createElement('div',{style:{fontSize:11,color:"#9ca3af",lineHeight:1.55}},e.analysis)))),
-      mealLog.length===0&&React.createElement('div',{style:{textAlign:"center",padding:"34px 20px",color:"#4b5563"}},
-        React.createElement(Camera,{size:26,color:"#1e2130",style:{margin:"0 auto 9px"}}),
-        React.createElement('div',{style:{fontSize:12}},t.noMeals),
-        React.createElement('div',{style:{fontSize:10,marginTop:3}},t.noMealsSub))),
+      mealLog.length>0&&React.createElement('div',null,React.createElement('div',{className:"st"},t.todayLog),mealLog.map(e=>React.createElement('div',{key:e.id,className:"mli"},
+        React.createElement('div',{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},React.createElement('span',{style:{fontSize:12,fontWeight:600}},e.meal),React.createElement('span',{style:{fontSize:10,color:"#4b5563"}},e.time)),
+        React.createElement('div',{style:{fontSize:11,color:"#9ca3af",lineHeight:1.55}},e.analysis)))),
+      mealLog.length===0&&React.createElement('div',{style:{textAlign:"center",padding:"34px 20px",color:"#4b5563"}},React.createElement(Camera,{size:26,color:"#1e2130",style:{margin:"0 auto 9px"}}),React.createElement('div',{style:{fontSize:12}},t.noMeals),React.createElement('div',{style:{fontSize:10,marginTop:3}},t.noMealsSub))),
 
     // ── GOALS ──
     tab==="goals"&&React.createElement('div',null,
@@ -834,11 +634,11 @@ function HealthApp(){
         React.createElement('div',{style:{display:"flex",alignItems:"center",gap:6,marginBottom:4}},React.createElement(Zap,{size:12,color:"#f59e0b"}),React.createElement('span',{style:{fontSize:9,color:"#f59e0b",fontWeight:700,letterSpacing:".05em"}},t.aiAdjusted)),
         React.createElement('div',{style:{fontSize:11,color:"#6b7280",lineHeight:1.6}},t.aiAdjustedText)),
       [
-        {icon:Activity,label:t.steps,   cur:9247, goal:10000,unit:lang==="lo"?" ກ້າວ":" steps",color:"#10b981"},
-        {icon:Moon,    label:t.sleep,   cur:5.2,  goal:8,    unit:"h",                          color:"#8b5cf6"},
-        {icon:Droplets,label:t.water,   cur:1.8,  goal:2.5,  unit:"L",                          color:"#06b6d4"},
-        {icon:Flame,   label:t.calories,cur:1840, goal:2200, unit:" kcal",                      color:"#f59e0b"},
-        {icon:Layers,  label:t.floors,  cur:12,   goal:20,   unit:lang==="lo"?" ຊັ້ນ":" flrs", color:"#06b6d4"},
+        {icon:Activity,label:t.steps,   cur:TODAY.steps, goal:10000,unit:lang==="lo"?" ກ້າວ":" steps",color:"#10b981"},
+        {icon:Moon,    label:t.sleep,   cur:TODAY.sleep,  goal:8,    unit:"h",                          color:"#8b5cf6"},
+        {icon:Droplets,label:t.water,   cur:TODAY.water,  goal:2.5,  unit:"L",                          color:"#06b6d4"},
+        {icon:Flame,   label:t.calories,cur:TODAY.calories, goal:2200, unit:" kcal",                      color:"#f59e0b"},
+        {icon:Layers,  label:t.floors,  cur:TODAY.floors,  goal:20,   unit:lang==="lo"?" ຊັ້ນ":" flrs", color:"#06b6d4"},
       ].map(g=>React.createElement('div',{key:g.label,style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:12,padding:13,marginBottom:8}},
         React.createElement('div',{style:{display:"flex",alignItems:"center",gap:8,marginBottom:9}},
           React.createElement('div',{style:{background:`${g.color}18`,borderRadius:8,padding:6}},React.createElement(g.icon,{size:14,color:g.color})),
@@ -846,8 +646,7 @@ function HealthApp(){
             React.createElement('div',{style:{fontSize:12,fontWeight:600}},g.label),
             React.createElement('div',{style:{fontSize:10,color:"#4b5563"}},`${t.goal}: ${g.goal}${g.unit}`)),
           React.createElement('div',{style:{fontSize:16,fontWeight:700,color:g.color}},`${pct(g.cur,g.goal)}%`)),
-        React.createElement('div',{style:{height:3,background:"#1a1d2e",borderRadius:2}},
-          React.createElement('div',{style:{height:"100%",width:`${pct(g.cur,g.goal)}%`,background:g.color,borderRadius:2,transition:"width 1s ease"}})),
+        React.createElement('div',{style:{height:3,background:"#1a1d2e",borderRadius:2}},React.createElement('div',{style:{height:"100%",width:`${pct(g.cur,g.goal)}%`,background:g.color,borderRadius:2,transition:"width 1s ease"}})),
         React.createElement('div',{style:{display:"flex",justifyContent:"space-between",marginTop:4}},
           React.createElement('span',{style:{fontSize:10,color:"#4b5563"}},`${g.cur}${g.unit} ${t.today}`),
           React.createElement('span',{style:{fontSize:10,color:g.color}},`${Math.round((g.goal-g.cur)*10)/10}${g.unit} ${t.toGo}`)))),
@@ -868,39 +667,32 @@ function HealthApp(){
             React.createElement(YAxis,{hide:true,domain:[40,100]}),
             React.createElement(Tooltip,{content:React.createElement(CT)}),
             React.createElement(Line,{type:"monotone",dataKey:"wellness",stroke:"#6366f1",strokeWidth:2,dot:false})))),
-      React.createElement('button',{style:{width:"100%",padding:11,border:"1px dashed #1e2130",borderRadius:10,background:"transparent",color:"#4b5563",cursor:"pointer",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",gap:6,fontFamily:"inherit"}},
-        React.createElement(Download,{size:12}),t.exportPDF),
+      React.createElement('button',{style:{width:"100%",padding:11,border:"1px dashed #1e2130",borderRadius:10,background:"transparent",color:"#4b5563",cursor:"pointer",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",gap:6,fontFamily:"inherit"}},React.createElement(Download,{size:12}),t.exportPDF),
       React.createElement('div',{className:"disc",style:{marginTop:10}},React.createElement(AlertCircle,{size:12,style:{flexShrink:0,marginTop:1}}),React.createElement('span',null,t.healthDisclaimer))),
 
     // ── FITBIT MANUAL SYNC ──
     tab==="fitbit"&&React.createElement('div',null,
-
-      // ── Fitbit Device Header ──
       React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:16,padding:18,marginBottom:10}},
         React.createElement('div',{style:{display:"flex",alignItems:"center",gap:14,marginBottom:14}},
           React.createElement('div',{style:{width:56,height:56,borderRadius:16,background:"linear-gradient(135deg,#00B0B9,#0073CF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}},"🫀"),
           React.createElement('div',{style:{flex:1}},
             React.createElement('div',{style:{fontSize:16,fontWeight:700,color:"white",marginBottom:2}},"Google Fitbit Air"),
-            React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginBottom:4}},"Fitbit Air · "+lang==="lo"?"ການ Sync ດ້ວຍຕົນເອງ":"Manual Sync"),
+            React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginBottom:4}},lang==="lo"?"ການ Sync ດ້ວຍຕົນເອງ":"Manual Sync"),
             React.createElement('div',{style:{display:"flex",alignItems:"center",gap:6}},
               React.createElement('div',{style:{width:7,height:7,borderRadius:"50%",background:syncData.syncTime?"#22c55e":"#4b5563"}}),
               React.createElement('span',{style:{fontSize:10,color:syncData.syncTime?"#22c55e":"#4b5563"}},
                 syncData.syncTime ? (t.syncLast+" "+syncData.syncTime) : t.syncNever)))),
 
-        // Last sync summary chips
         syncData.syncTime&&React.createElement('div',{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}},
-          [[lang==="lo"?"ກ້າວ":"Steps", syncData.steps.toLocaleString(), "#10b981"],
-           [lang==="lo"?"HR":"HR", syncData.heartRate+" bpm", "#ef4444"],
-           [lang==="lo"?"ນອນ":"Sleep", syncData.sleep+"h", "#8b5cf6"],
+          [["Steps", syncData.steps.toLocaleString(), "#10b981"],
+           ["HR", syncData.heartRate+" bpm", "#ef4444"],
+           ["Sleep", syncData.sleep+"h", "#8b5cf6"],
            ["SpO₂", syncData.spo2+"%", "#34d399"],
           ].map(([l,v,c])=>React.createElement('div',{key:l,style:{background:`${c}15`,border:`1px solid ${c}40`,borderRadius:8,padding:"4px 10px",display:"flex",gap:5,alignItems:"center"}},
-            React.createElement('span',{style:{fontSize:10,color:"#6b7280"}}),
             React.createElement('span',{style:{fontSize:11,color:c,fontWeight:600}},l+": "+v)))),
 
-        // Source badge
         React.createElement('div',{style:{fontSize:10,color:"#4b5563",textAlign:"right"}},t.syncSource)),
 
-      // ── Guide card ──
       React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1e2130",borderRadius:14,padding:16,marginBottom:10}},
         React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"white",marginBottom:10}},t.syncGuide),
         [t.syncStep1,t.syncStep2,t.syncStep3,t.syncStep4,t.syncStep5].map((s,i)=>
@@ -908,61 +700,65 @@ function HealthApp(){
             React.createElement('div',{style:{width:20,height:20,borderRadius:"50%",background:"#6366f1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"white",flexShrink:0}},i+1),
             React.createElement('div',{style:{fontSize:11,color:"#9ca3af",lineHeight:1.6}},s)))),
 
-      // ── Input Form ──
       React.createElement('div',{style:{background:"#0d0f1a",border:"1px solid #1a1d2e",borderRadius:14,padding:16,marginBottom:10}},
-        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"white",marginBottom:14}},t.syncTitle),
+        React.createElement('div',{style:{fontSize:12,fontWeight:700,color:"white",marginBottom:12}},t.syncTitle),
         React.createElement('div',{style:{fontSize:11,color:"#6b7280",marginBottom:14}},t.syncSub),
-
-        // 2-column grid of inputs
         React.createElement('div',{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}},
-          [
-            ["steps",      t.fSteps,    "9,247",  "👣"],
-            ["heartRate",  t.fHR,       "68",     "❤️"],
-            ["sleep",      t.fSleep,    "7.5",    "😴"],
-            ["deepSleep",  t.fDeep,     "1.4",    "🌊"],
-            ["remSleep",   t.fRem,      "1.8",    "💭"],
-            ["calories",   t.fCalories, "1840",   "🔥"],
-            ["water",      t.fWater,    "2.0",    "💧"],
-            ["spo2",       t.fSpo2,     "98",     "🩸"],
-            ["floors",     t.fFloors,   "12",     "🏢"],
-            ["hrv",        t.fHRV,      "42",     "📊"],
-            ["vo2max",     t.fVo2,      "48.2",   "🫁"],
-            ["bodyFat",    t.fFat,      "18.4",   "⚖️"],
-          ].map(([key,label,ph,emoji])=>
+          [["steps",      t.fSteps,    "9247"],
+           ["heartRate",  t.fHR,       "68"],
+           ["sleep",      t.fSleep,    "7.5"],
+           ["deepSleep",  t.fDeep,     "1.4"],
+           ["remSleep",   t.fRem,      "1.8"],
+           ["calories",   t.fCalories, "1840"],
+           ["water",      t.fWater,    "2.0"],
+           ["spo2",       t.fSpo2,     "98"],
+           ["floors",     t.fFloors,   "12"],
+           ["hrv",        t.fHRV,      "42"],
+           ["vo2max",     t.fVo2,      "48.2"],
+           ["bodyFat",    t.fFat,      "18.4"],
+          ].map(([key,label,ph])=>
             React.createElement('div',{key},
-              React.createElement('div',{style:{fontSize:10,color:"#6b7280",marginBottom:4,display:"flex",alignItems:"center",gap:4}},
-                React.createElement('span',null,emoji),label),
+              React.createElement('div',{style:{fontSize:10,color:"#6b7280",marginBottom:4}},label),
               React.createElement('input',{
-                type:"number", step:"0.1",
-                placeholder:ph,
+                type:"number", step:"0.1", placeholder:ph,
                 value:syncForm[key],
                 onChange:e=>setSyncForm(p=>({...p,[key]:e.target.value})),
-                style:{
-                  width:"100%",background:"#131520",border:`1px solid ${syncForm[key]?"#3d3f55":"#252838"}`,
-                  borderRadius:9,padding:"8px 10px",color:"white",fontSize:13,
-                  outline:"none",fontFamily:"inherit",
-                }
+                style:{width:"100%",background:"#131520",border:"1px solid #252838",borderRadius:9,padding:"8px 10px",color:"white",fontSize:13,outline:"none",fontFamily:"inherit"}
               })))),
 
-        // Save button
-        React.createElement('button',{
-          onClick:handleSyncSave,
-          style:{
-            width:"100%",padding:13,borderRadius:12,border:"none",
-            background:syncDone?"#052e16":"linear-gradient(135deg,#00B0B9,#0073CF)",
-            color:"white",fontSize:13,fontWeight:700,cursor:"pointer",
-            fontFamily:"inherit",transition:"all .3s",
-            display:"flex",alignItems:"center",justifyContent:"center",gap:8,
-          }},
-          syncDone?t.syncDone:t.syncBtn),
+        React.createElement('button',{onClick:handleSyncSave,
+          style:{width:"100%",padding:13,borderRadius:12,border:"none",background:syncMsg?"#052e16":"linear-gradient(135deg,#00B0B9,#0073CF)",color:"white",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .3s",display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
+          syncMsg?t.syncDone:t.syncBtn),
 
-        // Reset button
-        React.createElement('button',{
-          onClick:handleSyncReset,
-          style:{
-            width:"100%",marginTop:8,padding:10,borderRadius:10,
-            border:"1px solid #1e2130",background:"transparent",
-            color:"#4b5563",fontSize:11,cursor:"pointer",fontFamily:"inherit",
-          }},t.syncReset)),
+        React.createElement('button',{onClick:handleSyncReset,
+          style:{width:"100%",marginTop:8,padding:10,borderRadius:10,border:"1px solid #1e2130",background:"transparent",color:"#4b5563",fontSize:11,cursor:"pointer",fontFamily:"inherit"}},t.syncReset))),
 
-    
+    // FAB
+    React.createElement('button',{className:"fab",onClick:()=>setChatOpen(true),title:t.openCoach},"🐱"),
+
+    // CHAT DRAWER
+    chatOpen&&React.createElement('div',null,
+      React.createElement('div',{className:"cbk",onClick:()=>setChatOpen(false)}),
+      React.createElement('div',{className:"cdw"},
+        React.createElement('div',{className:"chdr"},
+          React.createElement('div',{style:{display:"flex",alignItems:"center",gap:8}},
+            React.createElement('div',{style:{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#ef4444)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}},"🐱"),
+            React.createElement('div',null,
+              React.createElement('div',{style:{fontSize:12,fontWeight:700}},t.meowCoach),
+              React.createElement('div',{style:{fontSize:9,color:"#10b981",display:"flex",alignItems:"center",gap:3}},React.createElement('div',{style:{width:5,height:5,borderRadius:"50%",background:"#10b981"}}),t.online,bad&&React.createElement('span',{style:{color:"#ef4444",marginLeft:3}},"⚠️")))),
+          React.createElement('button',{onClick:()=>setChatOpen(false),style:{background:"none",border:"none",cursor:"pointer",color:"#4b5563"}},React.createElement(X,{size:18}))),
+        React.createElement('div',{className:"cms"},
+          msgs.map((m,i)=>React.createElement('div',{key:i,className:`mb ${m.role}`},m.content)),
+          loading&&React.createElement('div',{className:"mb assistant",style:{display:"flex",gap:4,alignItems:"center"}},[0,.2,.4].map((d,i)=>React.createElement('div',{key:i,style:{width:5,height:5,borderRadius:"50%",background:"#f59e0b",animation:`pulse 1s infinite ${d}s`}}))),
+          React.createElement('div',{ref:chatEnd})),
+        React.createElement('div',{style:{padding:"5px 11px 6px",borderTop:"1px solid #1a1d2e"}},React.createElement('div',{style:{display:"flex",gap:4,flexWrap:"wrap"}},[t.qq1,t.qq2,t.qq3].map(q=>React.createElement('button',{key:q,onClick:()=>setInput(q),style:{padding:"3px 7px",borderRadius:16,border:"1px solid #1a1d2e",background:"transparent",color:"#6b7280",fontSize:9,cursor:"pointer",fontFamily:"inherit"}},q)))),
+        React.createElement('div',{className:"cir"},
+          React.createElement('textarea',{className:"ci",rows:1,placeholder:t.askMeow,value:input,onChange:e=>setInput(e.target.value),onKeyDown:e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}),
+          React.createElement('button',{className:"sb",onClick:send,disabled:loading||!input.trim()},loading?React.createElement(Loader2,{size:14,color:"white"}):React.createElement(Send,{size:14,color:"white"}))),
+        React.createElement('div',{style:{padding:"3px 13px 9px",fontSize:9,color:"#374151",textAlign:"center"}},t.meowDisclaimer)))
+  );
+}
+
+// Mount
+const root=ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(HealthApp));
